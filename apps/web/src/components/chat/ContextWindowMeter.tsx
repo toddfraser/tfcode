@@ -1,4 +1,3 @@
-import { cn } from "~/lib/utils";
 import { type ContextWindowSnapshot, formatContextWindowTokens } from "~/lib/contextWindow";
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 
@@ -63,16 +62,7 @@ export function ContextWindowMeter(props: { usage: ContextWindowSnapshot }) {
                   className="transition-[stroke-dashoffset] duration-500 ease-out motion-reduce:transition-none"
                 />
               </svg>
-              <span
-                className={cn(
-                  "relative flex h-[15px] w-[15px] items-center justify-center rounded-full bg-background text-[8px] font-medium",
-                  "text-muted-foreground",
-                )}
-              >
-                {usage.usedPercentage !== null
-                  ? Math.round(usage.usedPercentage)
-                  : formatContextWindowTokens(usage.usedTokens)}
-              </span>
+              <span className="relative h-[15px] w-[15px] rounded-full bg-background" />
             </span>
           </button>
         }

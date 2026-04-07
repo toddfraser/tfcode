@@ -716,9 +716,7 @@ function TerminalViewport({
       window.cancelAnimationFrame(frame);
     };
   }, [drawerHeight, resizeEpoch, terminalId, threadId]);
-  return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden rounded-[4px]" />
-  );
+  return <div ref={containerRef} className="relative h-full w-full overflow-hidden" />;
 }
 
 interface ThreadTerminalDrawerProps {
