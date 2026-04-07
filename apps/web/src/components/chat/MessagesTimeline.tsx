@@ -407,7 +407,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                     terminalContexts={terminalContexts}
                   />
                 )}
-                <div className="flex items-center justify-end gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
+                <div className="absolute right-2 bottom-2 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
                   {displayedUserMessage.copyText && (
                     <MessageCopyButton text={displayedUserMessage.copyText} />
                   )}
