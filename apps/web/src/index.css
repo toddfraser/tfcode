@@ -36,6 +36,40 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Unified font families: SF Pro (sans) / SF Mono (mono) */
+  --font-sans: "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --font-heading:
+    "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* Neutralize all font-weight emphasis until we decide what needs it */
+  --font-weight-thin: 400;
+  --font-weight-extralight: 400;
+  --font-weight-light: 400;
+  --font-weight-normal: 400;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 400;
+  --font-weight-bold: 400;
+  --font-weight-extrabold: 400;
+  --font-weight-black: 400;
+
+  /* Unified font sizes — all 14px */
+  --text-xs: 14px;
+  --text-xs--line-height: 20px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 14px;
+  --text-base--line-height: 20px;
+  --text-lg: 14px;
+  --text-lg--line-height: 20px;
+  --text-xl: 14px;
+  --text-xl--line-height: 20px;
+  --text-2xl: 14px;
+  --text-2xl--line-height: 20px;
+  --text-3xl: 14px;
+  --text-3xl--line-height: 20px;
+
   @keyframes skeleton {
     to {
       background-position: -200% 0;
@@ -122,12 +156,14 @@
 
 body {
   font-family:
-    "DM Sans",
+    "SF Pro",
+    "SF Pro Display",
     -apple-system,
     BlinkMacSystemFont,
-    "Segoe UI",
     system-ui,
     sans-serif;
+  font-size: 14px;
+  line-height: 20px;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -157,10 +193,9 @@ body::after {
 }
 
 pre,
-code,
-textarea,
-input {
+code {
   font-family: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 14px;
 }
 
 /* Window drag region (frameless titlebar) */
@@ -315,7 +350,7 @@ label:has(> select#reasoning-effort) select {
   background: var(--muted);
   padding: 0.1rem 0.35rem;
   color: var(--foreground);
-  font-size: 0.75rem;
+  font-size: 14px;
 }
 
 .chat-markdown pre {
@@ -332,7 +367,7 @@ label:has(> select#reasoning-effort) select {
   background: transparent;
   padding: 0;
   line-height: 1.5;
-  font-size: 0.875rem;
+  font-size: 14px;
 }
 
 .chat-markdown .chat-markdown-codeblock {
