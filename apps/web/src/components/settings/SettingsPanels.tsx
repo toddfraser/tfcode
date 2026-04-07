@@ -1329,7 +1329,7 @@ export function GeneralSettingsPanel() {
                                           {capLabels.map((label) => (
                                             <span
                                               key={label}
-                                              className="text-[10px] text-muted-foreground"
+                                              className="text-[11px] text-muted-foreground"
                                             >
                                               {label}
                                             </span>
@@ -1342,7 +1342,7 @@ export function GeneralSettingsPanel() {
                               ) : null}
                               {model.isCustom ? (
                                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                                  <span className="text-[10px] text-muted-foreground">custom</span>
+                                  <span className="text-[11px] text-muted-foreground">custom</span>
                                   <button
                                     type="button"
                                     className="text-muted-foreground transition-colors hover:text-foreground"

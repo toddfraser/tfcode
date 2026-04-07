@@ -438,7 +438,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
               {row.showCompletionDivider && (
                 <div className="my-3 flex items-center gap-3">
                   <span className="h-px flex-1 bg-border" />
-                  <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
+                  <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground/80">
                     {completionSummary ? `Response • ${completionSummary}` : "Response"}
                   </span>
                   <span className="h-px flex-1 bg-border" />
@@ -462,7 +462,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                   return (
                     <div className="mt-2 rounded-lg border border-border/80 bg-card/45 p-2.5">
                       <div className="mb-1.5 flex items-center justify-between gap-2">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/65">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground/65">
                           <span>Changed files ({changedFileCountLabel})</span>
                           {hasNonZeroStat(summaryStat) && (
                             <>
@@ -888,14 +888,14 @@ const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: {
           {workEntry.changedFiles?.slice(0, 4).map((filePath) => (
             <span
               key={`${workEntry.id}:${filePath}`}
-              className="rounded-md border border-border/55 bg-background/75 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/75"
+              className="rounded-md border border-border/55 bg-background/75 px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground/75"
               title={filePath}
             >
               {filePath}
             </span>
           ))}
           {(workEntry.changedFiles?.length ?? 0) > 4 && (
-            <span className="px-1 text-[10px] text-muted-foreground/55">
+            <span className="px-1 text-[11px] text-muted-foreground/55">
               +{(workEntry.changedFiles?.length ?? 0) - 4}
             </span>
           )}

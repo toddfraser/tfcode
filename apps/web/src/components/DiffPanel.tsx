@@ -470,7 +470,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                   : "border-border/70 bg-background/70 text-muted-foreground/80 hover:border-border hover:text-foreground/80",
               )}
             >
-              <div className="text-[10px] leading-tight font-medium">All turns</div>
+              <div className="text-[11px] leading-tight font-medium">All turns</div>
             </div>
           </button>
           {orderedTurnDiffSummaries.map((summary) => (
@@ -491,7 +491,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                 )}
               >
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] leading-tight font-medium">
+                  <span className="text-[11px] leading-tight font-medium">
                     Turn{" "}
                     {summary.checkpointTurnCount ??
                       inferredCheckpointTurnCountByTurnId[summary.turnId] ??

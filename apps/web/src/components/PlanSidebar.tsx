@@ -124,7 +124,7 @@ const PlanSidebar = memo(function PlanSidebar({
         <div className="flex items-center gap-2">
           <Badge
             variant="secondary"
-            className="rounded-md bg-blue-500/10 px-1.5 py-0 text-[10px] font-semibold tracking-wide text-blue-400 uppercase"
+            className="rounded-md bg-blue-500/10 px-1.5 py-0 text-[11px] font-semibold tracking-wide text-blue-400 uppercase"
           >
             Plan
           </Badge>
@@ -188,7 +188,7 @@ const PlanSidebar = memo(function PlanSidebar({
           {/* Plan Steps */}
           {activePlan && activePlan.steps.length > 0 ? (
             <div className="space-y-1">
-              <p className="mb-2 text-[10px] font-semibold tracking-widest text-muted-foreground/40 uppercase">
+              <p className="mb-2 text-[11px] font-semibold tracking-widest text-muted-foreground/40 uppercase">
                 Steps
               </p>
               {activePlan.steps.map((step) => (
@@ -231,7 +231,7 @@ const PlanSidebar = memo(function PlanSidebar({
                 ) : (
                   <ChevronRightIcon className="size-3 shrink-0 text-muted-foreground/40 transition-transform" />
                 )}
-                <span className="text-[10px] font-semibold tracking-widest text-muted-foreground/40 uppercase group-hover:text-muted-foreground/60">
+                <span className="text-[11px] font-semibold tracking-widest text-muted-foreground/40 uppercase group-hover:text-muted-foreground/60">
                   {planTitle ?? "Full Plan"}
                 </span>
               </button>

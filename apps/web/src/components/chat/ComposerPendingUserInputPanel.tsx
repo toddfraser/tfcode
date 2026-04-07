@@ -123,7 +123,7 @@ const ComposerPendingUserInputCard = memo(function ComposerPendingUserInputCard(
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
           {prompt.questions.length > 1 ? (
-            <span className="flex h-5 items-center rounded-md bg-muted/60 px-1.5 text-[10px] font-medium tabular-nums text-muted-foreground/60">
+            <span className="flex h-5 items-center rounded-md bg-muted/60 px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground/60">
               {questionIndex + 1}/{prompt.questions.length}
             </span>
           ) : null}
