@@ -177,18 +177,7 @@ export function resolveQuickAction(
   }
 
   if (hasChanges) {
-    if (!gitStatus.hasUpstream && !hasOriginRemote) {
-      return { label: "Commit", disabled: false, kind: "run_action", action: "commit" };
-    }
-    if (hasOpenPr || isDefaultBranch) {
-      return { label: "Commit & push", disabled: false, kind: "run_action", action: "commit_push" };
-    }
-    return {
-      label: "Commit, push & PR",
-      disabled: false,
-      kind: "run_action",
-      action: "commit_push_pr",
-    };
+    return { label: "Commit", disabled: false, kind: "run_action", action: "commit" };
   }
 
   if (!gitStatus.hasUpstream) {
@@ -223,10 +212,10 @@ export function resolveQuickAction(
       };
     }
     return {
-      label: "Push & create PR",
+      label: "Push",
       disabled: false,
       kind: "run_action",
-      action: "create_pr",
+      action: isDefaultBranch ? "commit_push" : "push",
     };
   }
 
@@ -248,19 +237,27 @@ export function resolveQuickAction(
   }
 
   if (isAhead) {
-    if (hasOpenPr || isDefaultBranch) {
+    if (hasOpenPr) {
       return {
         label: "Push",
         disabled: false,
         kind: "run_action",
-        action: isDefaultBranch ? "commit_push" : "push",
+        action: "push",
+      };
+    }
+    if (isDefaultBranch) {
+      return {
+        label: "Push",
+        disabled: false,
+        kind: "run_action",
+        action: "commit_push",
       };
     }
     return {
-      label: "Push & create PR",
+      label: "Push",
       disabled: false,
       kind: "run_action",
-      action: "create_pr",
+      action: "push",
     };
   }
 
