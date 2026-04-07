@@ -381,7 +381,7 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
           {props.renamingThreadId === thread.id ? (
             <input
               ref={props.onRenamingInputMount}
-              className="min-w-0 flex-1 truncate text-xs bg-transparent outline-none border border-ring rounded px-0.5"
+              className="min-w-0 flex-1 truncate text-sm bg-transparent outline-none border border-ring rounded px-0.5"
               value={props.renamingTitle}
               onChange={(event) => props.setRenamingTitle(event.target.value)}
               onKeyDown={(event) => {
@@ -404,7 +404,7 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
               onClick={(event) => event.stopPropagation()}
             />
           ) : (
-            <span className="min-w-0 flex-1 truncate text-xs">{thread.title}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{thread.title}</span>
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
@@ -1675,7 +1675,7 @@ export default function Sidebar() {
                     element.select();
                   }
                 }}
-                className="min-w-0 flex-1 truncate rounded border border-ring bg-transparent px-0.5 text-xs font-medium text-foreground/90 outline-none"
+                className="min-w-0 flex-1 truncate rounded border border-ring bg-transparent px-0.5 text-sm font-medium text-foreground/90 outline-none"
                 value={renamingProjectTitle}
                 onChange={(event) => setRenamingProjectTitle(event.target.value)}
                 onKeyDown={(event) => {
@@ -1699,7 +1699,7 @@ export default function Sidebar() {
                 onPointerDown={(event) => event.stopPropagation()}
               />
             ) : (
-              <span className="flex-1 truncate text-xs font-medium text-foreground/90">
+              <span className="flex-1 truncate text-sm font-medium text-foreground/90">
                 {project.name}
               </span>
             )}
@@ -2247,7 +2247,7 @@ export default function Sidebar() {
                   onClick={() => void navigate({ to: "/settings" })}
                 >
                   <SettingsIcon className="size-3.5" />
-                  <span className="text-xs">Settings</span>
+                  <span className="text-sm">Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

@@ -111,7 +111,7 @@ export default function BranchToolbar({
   return (
     <div className="mx-auto flex w-full max-w-208 items-center justify-end px-1 pb-3 pt-1">
       {envLocked || activeWorktreePath ? (
-        <span className="inline-flex items-center gap-1 border border-transparent pe-0 ps-[calc(--spacing(3)-1px)] text-sm font-medium text-muted-foreground/70 sm:text-xs">
+        <span className="inline-flex items-center gap-1 border border-transparent pe-0 ps-[calc(--spacing(3)-1px)] text-sm font-medium text-muted-foreground/70">
           {activeWorktreePath ? (
             <>
               <GitForkIcon className="size-3" />

@@ -59,9 +59,9 @@
   --font-weight-extrabold: 400;
   --font-weight-black: 400;
 
-  /* Unified font sizes — all 14px */
-  --text-xs: 14px;
-  --text-xs--line-height: 20px;
+  /* Unified font sizes */
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
   --text-sm: 14px;
   --text-sm--line-height: 20px;
   --text-base: 14px;
