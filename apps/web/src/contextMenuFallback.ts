@@ -47,10 +47,10 @@ export function showContextMenuFallback<T extends string>(
       const isDisabled = item.disabled === true;
       btn.disabled = isDisabled;
       btn.className = isDisabled
-        ? "flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-muted-foreground/60 cursor-not-allowed"
+        ? "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-muted-foreground/60 cursor-not-allowed"
         : isDestructiveAction
-          ? "flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-destructive hover:bg-accent cursor-default"
-          : "flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] text-popover-foreground hover:bg-accent cursor-default";
+          ? "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-destructive hover:bg-accent cursor-default"
+          : "flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-popover-foreground hover:bg-accent cursor-default";
       if (!isDisabled) {
         btn.addEventListener("click", () => cleanup(item.id));
       }

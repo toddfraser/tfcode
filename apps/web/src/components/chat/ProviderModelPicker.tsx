@@ -167,7 +167,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
                       )}
                     />
                     <span>{option.label}</span>
-                    <span className="ms-auto text-[11px] text-muted-foreground/80 uppercase tracking-[0.08em]">
+                    <span className="ms-auto text-xs text-muted-foreground/80 uppercase tracking-[0.08em]">
                       {unavailableLabel}
                     </span>
                   </MenuItem>
@@ -216,7 +216,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
                     className="size-4 shrink-0 text-muted-foreground/85 opacity-80"
                   />
                   <span>{option.label}</span>
-                  <span className="ms-auto text-[11px] text-muted-foreground/80 uppercase tracking-[0.08em]">
+                  <span className="ms-auto text-xs text-muted-foreground/80 uppercase tracking-[0.08em]">
                     Coming soon
                   </span>
                 </MenuItem>
@@ -229,7 +229,7 @@ export const ProviderModelPicker = memo(function ProviderModelPicker(props: {
                 <MenuItem key={option.id} disabled>
                   <OptionIcon aria-hidden="true" className="size-4 shrink-0 opacity-80" />
                   <span>{option.label}</span>
-                  <span className="ms-auto text-[11px] text-muted-foreground/80 uppercase tracking-[0.08em]">
+                  <span className="ms-auto text-xs text-muted-foreground/80 uppercase tracking-[0.08em]">
                     Coming soon
                   </span>
                 </MenuItem>

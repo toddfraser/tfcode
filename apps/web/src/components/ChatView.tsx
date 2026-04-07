@@ -4134,7 +4134,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
                                   />
                                 </button>
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center px-1 text-center text-[11px] text-muted-foreground/70">
+                                <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-muted-foreground/70">
                                   {image.name}
                                 </div>
                               )}

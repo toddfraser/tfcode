@@ -124,12 +124,12 @@ const PlanSidebar = memo(function PlanSidebar({
         <div className="flex items-center gap-2">
           <Badge
             variant="secondary"
-            className="rounded-md bg-blue-500/10 px-1.5 py-0 text-[11px] font-semibold tracking-wide text-blue-400 uppercase"
+            className="rounded-md bg-blue-500/10 px-1.5 py-0 text-xs font-semibold tracking-wide text-blue-400 uppercase"
           >
             Plan
           </Badge>
           {activePlan ? (
-            <span className="text-[11px] text-muted-foreground/60">
+            <span className="text-xs text-muted-foreground/60">
               {formatTimestamp(activePlan.createdAt, timestampFormat)}
             </span>
           ) : null}
@@ -188,7 +188,7 @@ const PlanSidebar = memo(function PlanSidebar({
           {/* Plan Steps */}
           {activePlan && activePlan.steps.length > 0 ? (
             <div className="space-y-1">
-              <p className="mb-2 text-[11px] font-semibold tracking-widest text-muted-foreground/40 uppercase">
+              <p className="mb-2 text-xs font-semibold tracking-widest text-muted-foreground/40 uppercase">
                 Steps
               </p>
               {activePlan.steps.map((step) => (
@@ -231,7 +231,7 @@ const PlanSidebar = memo(function PlanSidebar({
                 ) : (
                   <ChevronRightIcon className="size-3 shrink-0 text-muted-foreground/40 transition-transform" />
                 )}
-                <span className="text-[11px] font-semibold tracking-widest text-muted-foreground/40 uppercase group-hover:text-muted-foreground/60">
+                <span className="text-xs font-semibold tracking-widest text-muted-foreground/40 uppercase group-hover:text-muted-foreground/60">
                   {planTitle ?? "Full Plan"}
                 </span>
               </button>
@@ -251,7 +251,7 @@ const PlanSidebar = memo(function PlanSidebar({
           {!activePlan && !planMarkdown ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-[13px] text-muted-foreground/40">No active plan yet.</p>
-              <p className="mt-1 text-[11px] text-muted-foreground/30">
+              <p className="mt-1 text-xs text-muted-foreground/30">
                 Plans will appear here when generated.
               </p>
             </div>

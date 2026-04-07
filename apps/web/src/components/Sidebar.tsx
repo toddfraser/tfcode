@@ -422,7 +422,7 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
                 data-thread-selection-safe
                 data-testid={`thread-archive-confirm-${thread.id}`}
                 aria-label={`Confirm archive ${thread.title}`}
-                className="absolute top-1/2 right-1 inline-flex h-5 -translate-y-1/2 cursor-pointer items-center rounded-full bg-destructive/12 px-2 text-[11px] font-medium text-destructive transition-colors hover:bg-destructive/18 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-destructive/40"
+                className="absolute top-1/2 right-1 inline-flex h-5 -translate-y-1/2 cursor-pointer items-center rounded-full bg-destructive/12 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/18 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-destructive/40"
                 onPointerDown={(event) => {
                   event.stopPropagation();
                 }}
@@ -493,14 +493,14 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
             <span className={threadMetaClassName}>
               {props.showThreadJumpHints && props.jumpLabel ? (
                 <span
-                  className="inline-flex h-5 items-center rounded-full border border-border/80 bg-background/90 px-1.5 font-mono text-[11px] font-medium tracking-tight text-foreground shadow-sm"
+                  className="inline-flex h-5 items-center rounded-full border border-border/80 bg-background/90 px-1.5 font-mono text-xs font-medium tracking-tight text-foreground shadow-sm"
                   title={props.jumpLabel}
                 >
                   {props.jumpLabel}
                 </span>
               ) : (
                 <span
-                  className={`text-[11px] ${
+                  className={`text-xs ${
                     isHighlighted
                       ? "text-foreground/72 dark:text-foreground/82"
                       : "text-muted-foreground/40"
@@ -1770,7 +1770,7 @@ export default function Sidebar() {
             <SidebarMenuSubItem className="w-full" data-thread-selection-safe>
               <div
                 data-thread-selection-safe
-                className="flex h-6 w-full translate-x-0 items-center px-2 text-left text-[11px] text-muted-foreground/60"
+                className="flex h-6 w-full translate-x-0 items-center px-2 text-left text-xs text-muted-foreground/60"
               >
                 <span>No threads yet</span>
               </div>
@@ -1815,7 +1815,7 @@ export default function Sidebar() {
                 render={<button type="button" />}
                 data-thread-selection-safe
                 size="sm"
-                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-[11px] text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
+                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-xs text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
                 onClick={() => {
                   expandThreadListForProject(project.id);
                 }}
@@ -1833,7 +1833,7 @@ export default function Sidebar() {
                 render={<button type="button" />}
                 data-thread-selection-safe
                 size="sm"
-                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-[11px] text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
+                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-xs text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
                 onClick={() => {
                   collapseThreadListForProject(project.id);
                 }}
@@ -2098,7 +2098,7 @@ export default function Sidebar() {
             ) : null}
             <SidebarGroup className="px-2 py-2">
               <div className="mb-1 flex items-center justify-between pl-2 pr-1.5">
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
                   Projects
                 </span>
                 <div className="flex items-center gap-1">
@@ -2184,7 +2184,7 @@ export default function Sidebar() {
                     </button>
                   </div>
                   {addProjectError && (
-                    <p className="mt-1 px-0.5 text-[11px] leading-tight text-red-400">
+                    <p className="mt-1 px-0.5 text-xs leading-tight text-red-400">
                       {addProjectError}
                     </p>
                   )}

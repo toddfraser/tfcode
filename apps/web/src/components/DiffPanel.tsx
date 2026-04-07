@@ -39,12 +39,15 @@ type DiffRenderMode = "stacked" | "split";
 type DiffThemeType = "light" | "dark";
 
 const DIFF_PANEL_UNSAFE_CSS = `
+:host {
+  --diffs-font-size: 12px !important;
+}
+
 [data-diffs-header],
 [data-diff],
 [data-file],
 [data-error-wrapper],
 [data-virtualizer-buffer] {
-  --diffs-font-size: 12px !important;
   --diffs-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
   --diffs-light-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
   --diffs-dark-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
@@ -471,7 +474,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                   : "border-border/70 bg-background/70 text-muted-foreground/80 hover:border-border hover:text-foreground/80",
               )}
             >
-              <div className="text-[11px] leading-tight font-medium">All turns</div>
+              <div className="text-xs leading-tight font-medium">All turns</div>
             </div>
           </button>
           {orderedTurnDiffSummaries.map((summary) => (
@@ -492,13 +495,13 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                 )}
               >
                 <div className="flex items-center gap-1">
-                  <span className="text-[11px] leading-tight font-medium">
+                  <span className="text-xs leading-tight font-medium">
                     Turn{" "}
                     {summary.checkpointTurnCount ??
                       inferredCheckpointTurnCountByTurnId[summary.turnId] ??
                       "?"}
                   </span>
-                  <span className="text-[11px] leading-tight opacity-70">
+                  <span className="text-xs leading-tight opacity-70">
                     {formatShortTimestamp(summary.completedAt, settings.timestampFormat)}
                   </span>
                 </div>
@@ -565,7 +568,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
           >
             {checkpointDiffError && !renderablePatch && (
               <div className="px-3">
-                <p className="mb-2 text-[11px] text-red-500/80">{checkpointDiffError}</p>
+                <p className="mb-2 text-xs text-red-500/80">{checkpointDiffError}</p>
               </div>
             )}
             {!renderablePatch ? (
@@ -626,7 +629,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
             ) : (
               <div className="h-full overflow-auto p-2">
                 <div className="space-y-2">
-                  <p className="text-[11px] text-muted-foreground/75">{renderablePatch.reason}</p>
+                  <p className="text-xs text-muted-foreground/75">{renderablePatch.reason}</p>
                   <pre
                     className={cn(
                       "max-h-[72vh] rounded-md border border-border/70 bg-background/70 p-3 font-mono text-xs leading-relaxed text-muted-foreground/90",

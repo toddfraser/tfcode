@@ -208,7 +208,7 @@ function WebSocketBlockingState({
       <section className="relative w-full max-w-xl rounded-[1.75rem] border border-border/80 bg-card/92 p-6 shadow-2xl shadow-black/20 backdrop-blur-md sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.18em] text-muted-foreground uppercase">
+            <p className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
               {copy.eyebrow}
             </p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{copy.title}</h1>
@@ -222,7 +222,7 @@ function WebSocketBlockingState({
 
         <div className="mt-5 grid gap-3 rounded-2xl border border-border/70 bg-background/60 p-4 text-sm sm:grid-cols-2">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+            <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
               Connection
             </p>
             <p className="mt-1 font-medium text-foreground">
@@ -234,7 +234,7 @@ function WebSocketBlockingState({
             </p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+            <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
               Latest Event
             </p>
             <p className="mt-1 font-medium text-foreground">{disconnectedAt ?? "Pending"}</p>

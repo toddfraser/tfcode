@@ -204,7 +204,7 @@ function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }
   }
 
   return (
-    <span className="text-[11px] text-muted-foreground/60">
+    <span className="text-xs text-muted-foreground/60">
       {lastCheckedRelative.suffix ? (
         <>
           Checked <span className="font-mono tabular-nums">{lastCheckedRelative.value}</span>{" "}
@@ -231,7 +231,7 @@ function SettingsSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        <h2 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
           {icon}
           {title}
         </h2>
@@ -270,7 +270,7 @@ function SettingsRow({
             </span>
           </div>
           <p className="text-xs text-muted-foreground">{description}</p>
-          {status ? <div className="pt-1 text-[11px] text-muted-foreground">{status}</div> : null}
+          {status ? <div className="pt-1 text-xs text-muted-foreground">{status}</div> : null}
         </div>
         {control ? (
           <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
@@ -319,7 +319,7 @@ function AboutVersionTitle() {
   return (
     <span className="inline-flex items-center gap-2">
       <span>Version</span>
-      <code className="text-[11px] font-medium text-muted-foreground">{APP_VERSION}</code>
+      <code className="text-xs font-medium text-muted-foreground">{APP_VERSION}</code>
     </span>
   );
 }
@@ -1321,7 +1321,7 @@ export function GeneralSettingsPanel() {
                                   </TooltipTrigger>
                                   <TooltipPopup side="top" className="max-w-56">
                                     <div className="space-y-1">
-                                      <code className="block text-[11px] text-foreground">
+                                      <code className="block text-xs text-foreground">
                                         {model.slug}
                                       </code>
                                       {capLabels.length > 0 ? (
@@ -1329,7 +1329,7 @@ export function GeneralSettingsPanel() {
                                           {capLabels.map((label) => (
                                             <span
                                               key={label}
-                                              className="text-[11px] text-muted-foreground"
+                                              className="text-xs text-muted-foreground"
                                             >
                                               {label}
                                             </span>
@@ -1342,7 +1342,7 @@ export function GeneralSettingsPanel() {
                               ) : null}
                               {model.isCustom ? (
                                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                                  <span className="text-[11px] text-muted-foreground">custom</span>
+                                  <span className="text-xs text-muted-foreground">custom</span>
                                   <button
                                     type="button"
                                     className="text-muted-foreground transition-colors hover:text-foreground"
@@ -1417,7 +1417,7 @@ export function GeneralSettingsPanel() {
           description="Open the persisted `keybindings.json` file to edit advanced bindings directly."
           status={
             <>
-              <span className="block break-all font-mono text-[11px] text-foreground">
+              <span className="block break-all font-mono text-xs text-foreground">
                 {keybindingsConfigPath ?? "Resolving keybindings path..."}
               </span>
               {openKeybindingsError ? (
@@ -1454,7 +1454,7 @@ export function GeneralSettingsPanel() {
           description={diagnosticsDescription}
           status={
             <>
-              <span className="block break-all font-mono text-[11px] text-foreground">
+              <span className="block break-all font-mono text-xs text-foreground">
                 {logsDirectoryPath ?? "Resolving logs directory..."}
               </span>
               {openDiagnosticsError ? (

@@ -463,7 +463,7 @@ export function BranchToolbarBranchSelector({
       >
         <div className="flex w-full items-center justify-between gap-2">
           <span className="truncate">{itemValue}</span>
-          {badge && <span className="shrink-0 text-[11px] text-muted-foreground/45">{badge}</span>}
+          {badge && <span className="shrink-0 text-xs text-muted-foreground/45">{badge}</span>}
         </div>
       </ComboboxItem>
     );
