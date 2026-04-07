@@ -188,14 +188,14 @@ function ThreadStatusLabel({
   return (
     <span
       title={status.label}
-      className={`inline-flex items-center gap-1 text-[10px] ${status.colorClass}`}
+      className={`inline-flex shrink-0 items-center justify-center ${status.colorClass}`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${
           status.pulse ? "animate-pulse" : ""
         }`}
       />
-      <span className="hidden md:inline">{status.label}</span>
+      <span className="sr-only">{status.label}</span>
     </span>
   );
 }
@@ -378,26 +378,6 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
         }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-          {prStatus && (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={prStatus.tooltip}
-                    className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
-                    onClick={(event) => {
-                      props.openPrLink(event, prStatus.url);
-                    }}
-                  >
-                    <GitPullRequestIcon className="size-3" />
-                  </button>
-                }
-              />
-              <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
-            </Tooltip>
-          )}
-          {threadStatus && <ThreadStatusLabel status={threadStatus} />}
           {props.renamingThreadId === thread.id ? (
             <input
               ref={props.onRenamingInputMount}
@@ -428,6 +408,26 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {threadStatus && <ThreadStatusLabel status={threadStatus} />}
+          {prStatus && (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    aria-label={prStatus.tooltip}
+                    className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
+                    onClick={(event) => {
+                      props.openPrLink(event, prStatus.url);
+                    }}
+                  >
+                    <GitPullRequestIcon className="size-3" />
+                  </button>
+                }
+              />
+              <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
+            </Tooltip>
+          )}
           {terminalStatus && (
             <span
               role="img"
@@ -645,7 +645,7 @@ function SortableProjectItem({
         transform: CSS.Translate.toString(transform),
         transition,
       }}
-      className={`group/menu-item relative rounded-md ${
+      className={`group/menu-item relative mt-3 rounded-md first:mt-0 ${
         isDragging ? "z-20 opacity-80" : ""
       } ${isOver && !isDragging ? "ring-1 ring-primary/40" : ""}`}
       data-sidebar="menu-item"
@@ -2217,7 +2217,10 @@ export default function Sidebar() {
               ) : (
                 <SidebarMenu ref={attachProjectListAutoAnimateRef}>
                   {renderedProjects.map((renderedProject) => (
-                    <SidebarMenuItem key={renderedProject.project.id} className="rounded-md">
+                    <SidebarMenuItem
+                      key={renderedProject.project.id}
+                      className="mt-3 rounded-md first:mt-0"
+                    >
                       {renderProjectItem(renderedProject, null)}
                     </SidebarMenuItem>
                   ))}
