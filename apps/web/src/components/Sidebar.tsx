@@ -103,7 +103,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarSeparator,
   SidebarTrigger,
 } from "./ui/sidebar";
 import { useThreadSelectionStore } from "../threadSelectionStore";
@@ -2233,7 +2232,6 @@ export default function Sidebar() {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarSeparator />
           <SidebarFooter className="p-2">
             <SidebarUpdatePill />
             <SidebarMenu>
