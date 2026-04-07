@@ -210,7 +210,7 @@ body::after {
 pre,
 code {
   font-family: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 /* Window drag region (frameless titlebar) */
@@ -382,7 +382,7 @@ label:has(> select#reasoning-effort) select {
   background: transparent;
   padding: 0;
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .chat-markdown .chat-markdown-codeblock {
