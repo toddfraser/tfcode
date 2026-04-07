@@ -739,9 +739,9 @@ const UserMessageBody = memo(function UserMessageBody(props: {
   }
 
   return (
-    <pre className="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-foreground">
+    <div className="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-foreground">
       {props.text}
-    </pre>
+    </div>
   );
 });
 
