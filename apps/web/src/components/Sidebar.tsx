@@ -511,36 +511,38 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
               )}
             </span>
           </div>
-          {threadStatus && <ThreadStatusLabel status={threadStatus} />}
-          {prStatus && (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={prStatus.tooltip}
-                    className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
-                    onClick={(event) => {
-                      props.openPrLink(event, prStatus.url);
-                    }}
-                  >
-                    <GitPullRequestIcon className="size-3" />
-                  </button>
-                }
-              />
-              <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
-            </Tooltip>
-          )}
-          {terminalStatus && (
-            <span
-              role="img"
-              aria-label={terminalStatus.label}
-              title={terminalStatus.label}
-              className={`inline-flex items-center justify-center ${terminalStatus.colorClass}`}
-            >
-              <TerminalIcon className={`size-3 ${terminalStatus.pulse ? "animate-pulse" : ""}`} />
-            </span>
-          )}
+          <div className="flex shrink-0 items-center gap-1.5 transition-opacity duration-150 group-hover/menu-sub-item:opacity-0 group-focus-within/menu-sub-item:opacity-0">
+            {threadStatus && <ThreadStatusLabel status={threadStatus} />}
+            {prStatus && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label={prStatus.tooltip}
+                      className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
+                      onClick={(event) => {
+                        props.openPrLink(event, prStatus.url);
+                      }}
+                    >
+                      <GitPullRequestIcon className="size-3" />
+                    </button>
+                  }
+                />
+                <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
+              </Tooltip>
+            )}
+            {terminalStatus && (
+              <span
+                role="img"
+                aria-label={terminalStatus.label}
+                title={terminalStatus.label}
+                className={`inline-flex items-center justify-center ${terminalStatus.colorClass}`}
+              >
+                <TerminalIcon className={`size-3 ${terminalStatus.pulse ? "animate-pulse" : ""}`} />
+              </span>
+            )}
+          </div>
         </div>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
