@@ -44,6 +44,7 @@ const DIFF_PANEL_UNSAFE_CSS = `
 [data-file],
 [data-error-wrapper],
 [data-virtualizer-buffer] {
+  --diffs-font-size: 12px !important;
   --diffs-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
   --diffs-light-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
   --diffs-dark-bg: color-mix(in srgb, var(--card) 90%, var(--background)) !important;
@@ -497,7 +498,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                       inferredCheckpointTurnCountByTurnId[summary.turnId] ??
                       "?"}
                   </span>
-                  <span className="text-[9px] leading-tight opacity-70">
+                  <span className="text-[11px] leading-tight opacity-70">
                     {formatShortTimestamp(summary.completedAt, settings.timestampFormat)}
                   </span>
                 </div>
@@ -628,7 +629,7 @@ export default function DiffPanel({ mode = "inline" }: DiffPanelProps) {
                   <p className="text-[11px] text-muted-foreground/75">{renderablePatch.reason}</p>
                   <pre
                     className={cn(
-                      "max-h-[72vh] rounded-md border border-border/70 bg-background/70 p-3 font-mono text-[11px] leading-relaxed text-muted-foreground/90",
+                      "max-h-[72vh] rounded-md border border-border/70 bg-background/70 p-3 font-mono text-xs leading-relaxed text-muted-foreground/90",
                       diffWordWrap
                         ? "overflow-auto whitespace-pre-wrap wrap-break-word"
                         : "overflow-auto",
