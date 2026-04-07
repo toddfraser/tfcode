@@ -350,7 +350,7 @@ label:has(> select#reasoning-effort) select {
   background: var(--muted);
   padding: 0.1rem 0.35rem;
   color: var(--foreground);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .chat-markdown pre {
