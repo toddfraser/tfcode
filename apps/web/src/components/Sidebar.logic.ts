@@ -158,8 +158,12 @@ export function shouldClearThreadSelectionOnMouseDown(target: HTMLElement | null
 export function resolveSidebarNewThreadEnvMode(input: {
   requestedEnvMode?: SidebarNewThreadEnvMode;
   defaultEnvMode: SidebarNewThreadEnvMode;
+  worktrunkAvailable?: boolean;
 }): SidebarNewThreadEnvMode {
-  return input.requestedEnvMode ?? input.defaultEnvMode;
+  const requestedMode = input.requestedEnvMode ?? input.defaultEnvMode;
+  return requestedMode === "worktree" && input.worktrunkAvailable === false
+    ? "local"
+    : requestedMode;
 }
 
 export function resolveSidebarNewThreadSeedContext(input: {

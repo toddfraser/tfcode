@@ -57,6 +57,7 @@ const baseServerConfig: ServerConfig = {
   issues: [],
   providers: defaultProviders,
   availableEditors: ["cursor"],
+  worktrunkAvailable: false,
   observability: {
     logsDirectoryPath: "/tmp/workspace/.config/logs",
     localTracingEnabled: true,
@@ -264,6 +265,7 @@ describe("serverState", () => {
           ...DEFAULT_SERVER_SETTINGS,
           enableAssistantStreaming: true,
         },
+        worktrunkAvailable: true,
       },
     });
 
@@ -276,6 +278,7 @@ describe("serverState", () => {
           ...DEFAULT_SERVER_SETTINGS,
           enableAssistantStreaming: true,
         },
+        worktrunkAvailable: true,
       });
     });
 

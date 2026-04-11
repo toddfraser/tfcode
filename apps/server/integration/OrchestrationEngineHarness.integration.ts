@@ -70,6 +70,7 @@ import {
 import { deriveServerPaths, ServerConfig } from "../src/config.ts";
 import { WorkspaceEntriesLive } from "../src/workspace/Layers/WorkspaceEntries.ts";
 import { WorkspacePathsLive } from "../src/workspace/Layers/WorkspacePaths.ts";
+import { Worktrunk } from "../src/worktrunk/Services/Worktrunk.ts";
 
 function runGit(cwd: string, args: ReadonlyArray<string>) {
   return execFileSync("git", args, {
@@ -288,7 +289,18 @@ export const makeOrchestrationIntegrationHarness = (
           Layer.provide(AnalyticsService.layerTest),
         );
 
-    const checkpointStoreLayer = CheckpointStoreLive.pipe(Layer.provide(GitCoreLive));
+    const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+      checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+      list: () => Effect.succeed([]),
+      switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      remove: () => Effect.void,
+    } as any);
+    const checkpointStoreLayer = CheckpointStoreLive.pipe(
+      Layer.provide(GitCoreLive),
+      Layer.provide(WorktrunkTestLayer),
+    );
     const projectionSnapshotQueryLayer = OrchestrationProjectionSnapshotQueryLive;
     const runtimeServicesLayer = Layer.mergeAll(
       projectionSnapshotQueryLayer,

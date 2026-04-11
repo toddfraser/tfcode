@@ -9,9 +9,11 @@ import {
 } from "../composerDraftStore";
 import { newThreadId } from "../lib/utils";
 import { orderItemsByPreferredIds } from "../components/Sidebar.logic";
+import { useSettings } from "./useSettings";
 import { useStore } from "../store";
 import { useThreadById } from "../storeSelectors";
 import { useUiStateStore } from "../uiStateStore";
+import { useServerWorktrunkAvailable } from "../rpc/serverState";
 
 export function useHandleNewThread() {
   const projectIds = useStore(useShallow((store) => store.projects.map((project) => project.id)));
@@ -25,6 +27,10 @@ export function useHandleNewThread() {
   const activeDraftThread = useComposerDraftStore((store) =>
     routeThreadId ? (store.draftThreadsByThreadId[routeThreadId] ?? null) : null,
   );
+  const settings = useSettings();
+  const worktrunkSettingEnabled = settings.providers.worktrunk.enabled;
+  const worktrunkAvailable = useServerWorktrunkAvailable();
+  const canCreateWorktreeDrafts = worktrunkSettingEnabled && worktrunkAvailable;
   const orderedProjects = useMemo(() => {
     return orderItemsByPreferredIds({
       items: projectIds,
@@ -53,6 +59,11 @@ export function useHandleNewThread() {
       const hasBranchOption = options?.branch !== undefined;
       const hasWorktreePathOption = options?.worktreePath !== undefined;
       const hasEnvModeOption = options?.envMode !== undefined;
+      const normalizedWorktreePath = options?.worktreePath ?? null;
+      const normalizedEnvMode =
+        !normalizedWorktreePath && options?.envMode === "worktree" && !canCreateWorktreeDrafts
+          ? "local"
+          : options?.envMode;
       const storedDraftThread = getDraftThreadByProjectId(projectId);
       const latestActiveDraftThread: DraftThreadState | null = routeThreadId
         ? getDraftThread(routeThreadId)
@@ -62,8 +73,10 @@ export function useHandleNewThread() {
           if (hasBranchOption || hasWorktreePathOption || hasEnvModeOption) {
             setDraftThreadContext(storedDraftThread.threadId, {
               ...(hasBranchOption ? { branch: options?.branch ?? null } : {}),
-              ...(hasWorktreePathOption ? { worktreePath: options?.worktreePath ?? null } : {}),
-              ...(hasEnvModeOption ? { envMode: options?.envMode } : {}),
+              ...(hasWorktreePathOption ? { worktreePath: normalizedWorktreePath } : {}),
+              ...(hasEnvModeOption && normalizedEnvMode !== undefined
+                ? { envMode: normalizedEnvMode }
+                : {}),
             });
           }
           setProjectDraftThreadId(projectId, storedDraftThread.threadId);
@@ -87,8 +100,10 @@ export function useHandleNewThread() {
         if (hasBranchOption || hasWorktreePathOption || hasEnvModeOption) {
           setDraftThreadContext(routeThreadId, {
             ...(hasBranchOption ? { branch: options?.branch ?? null } : {}),
-            ...(hasWorktreePathOption ? { worktreePath: options?.worktreePath ?? null } : {}),
-            ...(hasEnvModeOption ? { envMode: options?.envMode } : {}),
+            ...(hasWorktreePathOption ? { worktreePath: normalizedWorktreePath } : {}),
+            ...(hasEnvModeOption && normalizedEnvMode !== undefined
+              ? { envMode: normalizedEnvMode }
+              : {}),
           });
         }
         setProjectDraftThreadId(projectId, routeThreadId);
@@ -101,8 +116,8 @@ export function useHandleNewThread() {
         setProjectDraftThreadId(projectId, threadId, {
           createdAt,
           branch: options?.branch ?? null,
-          worktreePath: options?.worktreePath ?? null,
-          envMode: options?.envMode ?? "local",
+          worktreePath: normalizedWorktreePath,
+          envMode: normalizedEnvMode ?? "local",
           runtimeMode: DEFAULT_RUNTIME_MODE,
         });
         applyStickyState(threadId);
@@ -113,7 +128,7 @@ export function useHandleNewThread() {
         });
       })();
     },
-    [navigate, routeThreadId],
+    [canCreateWorktreeDrafts, navigate, routeThreadId],
   );
 
   return {

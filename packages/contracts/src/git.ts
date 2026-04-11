@@ -141,7 +141,6 @@ export const GitCreateWorktreeInput = Schema.Struct({
   cwd: TrimmedNonEmptyStringSchema,
   branch: TrimmedNonEmptyStringSchema,
   newBranch: Schema.optional(TrimmedNonEmptyStringSchema),
-  path: Schema.NullOr(TrimmedNonEmptyStringSchema),
 });
 export type GitCreateWorktreeInput = typeof GitCreateWorktreeInput.Type;
 
@@ -161,7 +160,8 @@ export type GitPreparePullRequestThreadInput = typeof GitPreparePullRequestThrea
 
 export const GitRemoveWorktreeInput = Schema.Struct({
   cwd: TrimmedNonEmptyStringSchema,
-  path: TrimmedNonEmptyStringSchema,
+  branch: TrimmedNonEmptyStringSchema,
+  expectedPath: Schema.optional(TrimmedNonEmptyStringSchema),
   force: Schema.optional(Schema.Boolean),
 });
 export type GitRemoveWorktreeInput = typeof GitRemoveWorktreeInput.Type;

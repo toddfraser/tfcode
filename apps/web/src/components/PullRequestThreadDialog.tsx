@@ -26,6 +26,7 @@ interface PullRequestThreadDialogProps {
   open: boolean;
   threadId: ThreadId;
   cwd: string | null;
+  canPrepareWorktree: boolean;
   initialReference: string | null;
   onOpenChange: (open: boolean) => void;
   onPrepared: (input: { branch: string; worktreePath: string | null }) => Promise<void> | void;
@@ -35,6 +36,7 @@ export function PullRequestThreadDialog({
   open,
   threadId,
   cwd,
+  canPrepareWorktree,
   initialReference,
   onOpenChange,
   onPrepared,
@@ -188,6 +190,7 @@ export function PullRequestThreadDialog({
           <DialogDescription>
             Resolve a GitHub pull request, then create the draft thread in the main repo or in a
             dedicated worktree.
+            {!canPrepareWorktree ? " Worktree mode is currently unavailable." : ""}
           </DialogDescription>
         </DialogHeader>
         <DialogPanel className="space-y-4">
@@ -275,6 +278,7 @@ export function PullRequestThreadDialog({
               !cwd ||
               !resolvedPullRequest ||
               isResolving ||
+              !canPrepareWorktree ||
               preparePullRequestThreadMutation.isPending
             }
           >

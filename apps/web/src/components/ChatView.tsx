@@ -995,6 +995,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
     : null;
   const serverConfig = useServerConfig();
   const providerStatuses = serverConfig?.providers ?? EMPTY_PROVIDERS;
+  const canCreateWorktrees =
+    settings.providers.worktrunk.enabled && Boolean(serverConfig?.worktrunkAvailable);
   const unlockedSelectedProvider = resolveSelectableProvider(
     providerStatuses,
     selectedProviderByThreadId ?? threadProvider ?? "codex",
@@ -2512,7 +2514,9 @@ export default function ChatView({ threadId }: ChatViewProps) {
   const envMode: DraftThreadEnvMode = activeWorktreePath
     ? "worktree"
     : isLocalDraftThread
-      ? (draftThread?.envMode ?? "local")
+      ? draftThread?.envMode === "worktree" && !canCreateWorktrees
+        ? "local"
+        : (draftThread?.envMode ?? "local")
       : "local";
 
   useEffect(() => {
@@ -4431,6 +4435,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
               open
               threadId={activeThread.id}
               cwd={activeProject?.cwd ?? null}
+              canPrepareWorktree={canCreateWorktrees}
               initialReference={pullRequestDialogState.initialReference}
               onOpenChange={(open) => {
                 if (!open) {

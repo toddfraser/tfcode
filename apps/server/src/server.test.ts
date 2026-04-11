@@ -83,6 +83,7 @@ import {
   ProjectSetupScriptRunner,
   type ProjectSetupScriptRunnerShape,
 } from "./project/Services/ProjectSetupScriptRunner.ts";
+import { Worktrunk } from "./worktrunk/Services/Worktrunk.ts";
 import { WorkspaceEntriesLive } from "./workspace/Layers/WorkspaceEntries.ts";
 import { WorkspaceFileSystemLive } from "./workspace/Layers/WorkspaceFileSystem.ts";
 import { WorkspacePathsLive } from "./workspace/Layers/WorkspacePaths.ts";
@@ -415,6 +416,16 @@ const buildAppUnderTest = (options?: {
           enqueueCommand: (effect) => effect,
           ...options?.layers?.serverRuntimeStartup,
         }),
+      ),
+      Layer.provide(
+        Layer.succeed(Worktrunk, {
+          checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+          list: () => Effect.succeed([]),
+          switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+          switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+          switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+          remove: () => Effect.void,
+        } as any),
       ),
       Layer.provide(workspaceAndProjectServicesLayer),
       Layer.provideMerge(FetchHttpClient.layer),
@@ -1475,7 +1486,6 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
           client[WS_METHODS.gitCreateWorktree]({
             cwd: "/tmp/repo",
             branch: "main",
-            path: null,
           }),
         ),
       );
@@ -1485,7 +1495,7 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
         withWsRpcClient(wsUrl, (client) =>
           client[WS_METHODS.gitRemoveWorktree]({
             cwd: "/tmp/repo",
-            path: "/tmp/wt",
+            branch: "feature/demo",
           }),
         ),
       );
@@ -2129,7 +2139,6 @@ it.layer(NodeServices.layer)("server router seam", (it) => {
           cwd: "/tmp/project",
           branch: "main",
           newBranch: "t3code/bootstrap-branch",
-          path: null,
         });
         assert.deepEqual(runForThread.mock.calls[0]?.[0], {
           threadId: ThreadId.makeUnsafe("thread-bootstrap"),

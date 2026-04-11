@@ -126,7 +126,7 @@ import {
 import { SidebarUpdatePill } from "./sidebar/SidebarUpdatePill";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { useSettings, useUpdateSettings } from "~/hooks/useSettings";
-import { useServerKeybindings } from "../rpc/serverState";
+import { useServerKeybindings, useServerWorktrunkAvailable } from "../rpc/serverState";
 import { useSidebarThreadSummaryById } from "../storeSelectors";
 import type { Project } from "../types";
 const THREAD_PREVIEW_LIMIT = 6;
@@ -684,6 +684,7 @@ export default function Sidebar() {
   const pathname = useLocation({ select: (loc) => loc.pathname });
   const isOnSettings = pathname.startsWith("/settings");
   const appSettings = useSettings();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const { updateSettings } = useUpdateSettings();
   const { activeDraftThread, activeThread, handleNewThread } = useHandleNewThread();
   const { archiveThread, deleteThread } = useThreadActions();
@@ -854,7 +855,10 @@ export default function Sidebar() {
           createdAt,
         });
         await handleNewThread(projectId, {
-          envMode: appSettings.defaultThreadEnvMode,
+          envMode: resolveSidebarNewThreadEnvMode({
+            defaultEnvMode: appSettings.defaultThreadEnvMode,
+            worktrunkAvailable,
+          }),
         }).catch(() => undefined);
       } catch (error) {
         const description =
@@ -880,6 +884,7 @@ export default function Sidebar() {
       projects,
       shouldBrowseForProjectImmediately,
       appSettings.defaultThreadEnvMode,
+      worktrunkAvailable,
     ],
   );
 
@@ -1724,6 +1729,7 @@ export default function Sidebar() {
                       projectId: project.id,
                       defaultEnvMode: resolveSidebarNewThreadEnvMode({
                         defaultEnvMode: appSettings.defaultThreadEnvMode,
+                        worktrunkAvailable,
                       }),
                       activeThread:
                         activeThread && activeThread.projectId === project.id

@@ -13,13 +13,23 @@ import { GitCore } from "../../git/Services/GitCore.ts";
 import { GitCommandError } from "@t3tools/contracts";
 import { ServerConfig } from "../../config.ts";
 import { ThreadId } from "@t3tools/contracts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 
 const ServerConfigLayer = ServerConfig.layerTest(process.cwd(), {
   prefix: "t3-checkpoint-store-test-",
 });
+const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+  checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+  list: () => Effect.succeed([]),
+  switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  remove: () => Effect.void,
+} as any);
 const GitCoreTestLayer = GitCoreLive.pipe(
   Layer.provide(ServerConfigLayer),
   Layer.provide(NodeServices.layer),
+  Layer.provide(WorktrunkTestLayer),
 );
 const CheckpointStoreTestLayer = CheckpointStoreLive.pipe(
   Layer.provide(GitCoreTestLayer),

@@ -63,6 +63,7 @@ import {
   useServerKeybindingsConfigPath,
   useServerObservability,
   useServerProviders,
+  useServerWorktrunkAvailable,
 } from "../../rpc/serverState";
 
 const THEME_OPTIONS = [
@@ -456,6 +457,10 @@ export function useSettingsRestore(onRestored?: () => void) {
     const defaultSettings = DEFAULT_UNIFIED_SETTINGS.providers[providerSettings.provider];
     return !Equal.equals(currentSettings, defaultSettings);
   });
+  const isWorktrunkSettingsDirty = !Equal.equals(
+    settings.providers.worktrunk,
+    DEFAULT_UNIFIED_SETTINGS.providers.worktrunk,
+  );
 
   const changedSettingLabels = useMemo(
     () => [
@@ -479,10 +484,11 @@ export function useSettingsRestore(onRestored?: () => void) {
         ? ["Delete confirmation"]
         : []),
       ...(isGitWritingModelDirty ? ["Git writing model"] : []),
-      ...(areProviderSettingsDirty ? ["Providers"] : []),
+      ...(areProviderSettingsDirty || isWorktrunkSettingsDirty ? ["Providers"] : []),
     ],
     [
       areProviderSettingsDirty,
+      isWorktrunkSettingsDirty,
       isGitWritingModelDirty,
       settings.confirmThreadArchive,
       settings.confirmThreadDelete,
@@ -538,6 +544,12 @@ export function GeneralSettingsPanel() {
       settings.providers.claudeAgent.customModels.length > 0,
     ),
   });
+  const [openWorktrunkDetails, setOpenWorktrunkDetails] = useState(
+    () =>
+      settings.providers.worktrunk.binaryPath !==
+        DEFAULT_UNIFIED_SETTINGS.providers.worktrunk.binaryPath ||
+      settings.providers.worktrunk.enabled !== DEFAULT_UNIFIED_SETTINGS.providers.worktrunk.enabled,
+  );
   const [customModelInputByProvider, setCustomModelInputByProvider] = useState<
     Record<ProviderKind, string>
   >({
@@ -569,7 +581,13 @@ export function GeneralSettingsPanel() {
   const availableEditors = useServerAvailableEditors();
   const observability = useServerObservability();
   const serverProviders = useServerProviders();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const codexHomePath = settings.providers.codex.homePath;
+  const canCreateWorktrees = settings.providers.worktrunk.enabled && worktrunkAvailable;
+  const isWorktrunkSettingsDirty = !Equal.equals(
+    settings.providers.worktrunk,
+    DEFAULT_UNIFIED_SETTINGS.providers.worktrunk,
+  );
   const logsDirectoryPath = observability?.logsDirectoryPath ?? null;
   const diagnosticsDescription = (() => {
     const exports: string[] = [];
@@ -582,6 +600,16 @@ export function GeneralSettingsPanel() {
     const mode = observability?.localTracingEnabled ? "Local trace file" : "Terminal logs only";
     return exports.length > 0 ? `${mode}. OTLP exporting ${exports.join(" and ")}.` : `${mode}.`;
   })();
+  const worktrunkHeadline = !settings.providers.worktrunk.enabled
+    ? "Disabled"
+    : worktrunkAvailable
+      ? "Available"
+      : "Not found";
+  const worktrunkDetail = !settings.providers.worktrunk.enabled
+    ? "Worktree creation is disabled in T3 Code."
+    : worktrunkAvailable
+      ? "Installed and ready for new worktree threads."
+      : "CLI not detected at the configured path.";
 
   const textGenerationModelSelection = resolveAppModelSelectionState(settings, serverProviders);
   const textGenProvider = textGenerationModelSelection.provider;
@@ -907,7 +935,11 @@ export function GeneralSettingsPanel() {
 
         <SettingsRow
           title="New threads"
-          description="Pick the default workspace mode for newly created draft threads."
+          description={
+            canCreateWorktrees
+              ? "Pick the default workspace mode for newly created draft threads."
+              : "Pick the default workspace mode for newly created draft threads. Worktree mode is currently unavailable, so new drafts start local."
+          }
           resetAction={
             settings.defaultThreadEnvMode !== DEFAULT_UNIFIED_SETTINGS.defaultThreadEnvMode ? (
               <SettingResetButton
@@ -922,25 +954,33 @@ export function GeneralSettingsPanel() {
           }
           control={
             <Select
-              value={settings.defaultThreadEnvMode}
+              value={
+                settings.defaultThreadEnvMode === "worktree" && !canCreateWorktrees
+                  ? "local"
+                  : settings.defaultThreadEnvMode
+              }
               onValueChange={(value) => {
-                if (value === "local" || value === "worktree") {
+                if (value === "local" || (value === "worktree" && canCreateWorktrees)) {
                   updateSettings({ defaultThreadEnvMode: value });
                 }
               }}
             >
               <SelectTrigger className="w-full sm:w-44" aria-label="Default thread mode">
                 <SelectValue>
-                  {settings.defaultThreadEnvMode === "worktree" ? "New worktree" : "Local"}
+                  {settings.defaultThreadEnvMode === "worktree" && canCreateWorktrees
+                    ? "New worktree"
+                    : "Local"}
                 </SelectValue>
               </SelectTrigger>
               <SelectPopup align="end" alignItemWithTrigger={false}>
                 <SelectItem hideIndicator value="local">
                   Local
                 </SelectItem>
-                <SelectItem hideIndicator value="worktree">
-                  New worktree
-                </SelectItem>
+                {canCreateWorktrees ? (
+                  <SelectItem hideIndicator value="worktree">
+                    New worktree
+                  </SelectItem>
+                ) : null}
               </SelectPopup>
             </Select>
           }
@@ -1409,6 +1449,123 @@ export function GeneralSettingsPanel() {
             </div>
           );
         })}
+        <div className="border-t border-border first:border-t-0">
+          <div className="px-4 py-4 sm:px-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex min-h-5 items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "size-2 shrink-0 rounded-full",
+                      !settings.providers.worktrunk.enabled
+                        ? PROVIDER_STATUS_STYLES.disabled.dot
+                        : worktrunkAvailable
+                          ? PROVIDER_STATUS_STYLES.ready.dot
+                          : PROVIDER_STATUS_STYLES.error.dot,
+                    )}
+                  />
+                  <h3 className="text-sm font-medium text-foreground">Worktrunk</h3>
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+                    {isWorktrunkSettingsDirty ? (
+                      <SettingResetButton
+                        label="Worktrunk settings"
+                        onClick={() =>
+                          updateSettings({
+                            providers: {
+                              ...settings.providers,
+                              worktrunk: DEFAULT_UNIFIED_SETTINGS.providers.worktrunk,
+                            },
+                            ...(settings.defaultThreadEnvMode === "worktree"
+                              ? { defaultThreadEnvMode: "local" as const }
+                              : {}),
+                          })
+                        }
+                      />
+                    ) : null}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {worktrunkHeadline}
+                  {worktrunkDetail ? ` - ${worktrunkDetail}` : null}
+                </p>
+              </div>
+              <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setOpenWorktrunkDetails((open) => !open)}
+                  aria-label="Toggle Worktrunk details"
+                >
+                  <ChevronDownIcon
+                    className={cn(
+                      "size-3.5 transition-transform",
+                      openWorktrunkDetails && "rotate-180",
+                    )}
+                  />
+                </Button>
+                <Switch
+                  checked={settings.providers.worktrunk.enabled}
+                  onCheckedChange={(checked) =>
+                    updateSettings({
+                      providers: {
+                        ...settings.providers,
+                        worktrunk: {
+                          ...settings.providers.worktrunk,
+                          enabled: Boolean(checked),
+                        },
+                      },
+                      ...(!checked && settings.defaultThreadEnvMode === "worktree"
+                        ? { defaultThreadEnvMode: "local" as const }
+                        : {}),
+                    })
+                  }
+                  aria-label="Enable Worktrunk"
+                />
+              </div>
+            </div>
+          </div>
+
+          <Collapsible open={openWorktrunkDetails} onOpenChange={setOpenWorktrunkDetails}>
+            <CollapsibleContent>
+              <div className="space-y-0">
+                <div className="border-t border-border/60 px-4 py-3 sm:px-5">
+                  <label htmlFor="provider-install-worktrunk-binary-path" className="block">
+                    <span className="text-xs font-medium text-foreground">
+                      Worktrunk binary path
+                    </span>
+                    <Input
+                      id="provider-install-worktrunk-binary-path"
+                      className="mt-1.5"
+                      value={settings.providers.worktrunk.binaryPath}
+                      onChange={(event) =>
+                        updateSettings({
+                          providers: {
+                            ...settings.providers,
+                            worktrunk: {
+                              ...settings.providers.worktrunk,
+                              binaryPath: event.target.value,
+                            },
+                          },
+                        })
+                      }
+                      placeholder="wt"
+                      spellCheck={false}
+                    />
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Path to the Worktrunk binary used for worktree creation and cleanup.
+                    </span>
+                  </label>
+                </div>
+                <div className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground sm:px-5">
+                  {canCreateWorktrees
+                    ? "New worktree threads are enabled."
+                    : "New worktree threads are currently disabled and draft threads fall back to local mode."}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
       </SettingsSection>
 
       <SettingsSection title="Advanced">

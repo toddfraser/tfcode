@@ -5,6 +5,8 @@ import { useCallback } from "react";
 import { newCommandId } from "../lib/utils";
 import { readNativeApi } from "../nativeApi";
 import { useComposerDraftStore } from "../composerDraftStore";
+import { useSettings } from "../hooks/useSettings";
+import { useServerWorktrunkAvailable } from "../rpc/serverState";
 import { useStore } from "../store";
 import {
   EnvMode,
@@ -13,11 +15,6 @@ import {
 } from "./BranchToolbar.logic";
 import { BranchToolbarBranchSelector } from "./BranchToolbarBranchSelector";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "./ui/select";
-
-const envModeItems = [
-  { value: "local", label: "Local" },
-  { value: "worktree", label: "New worktree" },
-] as const;
 
 interface BranchToolbarProps {
   threadId: ThreadId;
@@ -39,6 +36,9 @@ export default function BranchToolbar({
   const setThreadBranchAction = useStore((store) => store.setThreadBranch);
   const draftThread = useComposerDraftStore((store) => store.getDraftThread(threadId));
   const setDraftThreadContext = useComposerDraftStore((store) => store.setDraftThreadContext);
+  const settings = useSettings();
+  const worktrunkSettingEnabled = settings.providers.worktrunk.enabled;
+  const worktrunkAvailable = useServerWorktrunkAvailable();
 
   const serverThread = threads.find((thread) => thread.id === threadId);
   const activeProjectId = serverThread?.projectId ?? draftThread?.projectId ?? null;
@@ -53,6 +53,17 @@ export default function BranchToolbar({
     hasServerThread,
     draftThreadEnvMode: draftThread?.envMode,
   });
+  const canCreateWorktrees = worktrunkSettingEnabled && worktrunkAvailable;
+  const normalizedEnvMode: EnvMode =
+    !activeWorktreePath && effectiveEnvMode === "worktree" && !canCreateWorktrees
+      ? "local"
+      : effectiveEnvMode;
+  const envModeItems = canCreateWorktrees
+    ? ([
+        { value: "local", label: "Local" },
+        { value: "worktree", label: "New worktree" },
+      ] as const)
+    : ([{ value: "local", label: "Local" }] as const);
 
   const setThreadBranch = useCallback(
     (branch: string | null, worktreePath: string | null) => {
@@ -86,7 +97,7 @@ export default function BranchToolbar({
       const nextDraftEnvMode = resolveDraftEnvModeAfterBranchChange({
         nextWorktreePath: worktreePath,
         currentWorktreePath: activeWorktreePath,
-        effectiveEnvMode,
+        effectiveEnvMode: normalizedEnvMode,
       });
       setDraftThreadContext(threadId, {
         branch,
@@ -102,7 +113,7 @@ export default function BranchToolbar({
       setThreadBranchAction,
       setDraftThreadContext,
       threadId,
-      effectiveEnvMode,
+      normalizedEnvMode,
     ],
   );
 
@@ -128,12 +139,12 @@ export default function BranchToolbar({
       ) : (
         <span className="inline-flex items-center gap-1">
           <Select
-            value={effectiveEnvMode}
+            value={normalizedEnvMode}
             onValueChange={(value) => onEnvModeChange(value as EnvMode)}
             items={envModeItems}
           >
             <SelectTrigger variant="ghost" size="xs" className="font-medium">
-              {effectiveEnvMode === "worktree" ? (
+              {normalizedEnvMode === "worktree" ? (
                 <GitForkIcon className="size-3" />
               ) : (
                 <FolderIcon className="size-3" />
@@ -147,12 +158,14 @@ export default function BranchToolbar({
                   Local
                 </span>
               </SelectItem>
-              <SelectItem value="worktree">
-                <span className="inline-flex items-center gap-1.5">
-                  <GitForkIcon className="size-3" />
-                  New worktree
-                </span>
-              </SelectItem>
+              {canCreateWorktrees ? (
+                <SelectItem value="worktree">
+                  <span className="inline-flex items-center gap-1.5">
+                    <GitForkIcon className="size-3" />
+                    New worktree
+                  </span>
+                </SelectItem>
+              ) : null}
             </SelectPopup>
           </Select>
           <span className="text-muted-foreground/40">{"\u2192"}</span>
@@ -164,7 +177,7 @@ export default function BranchToolbar({
         activeThreadBranch={activeThreadBranch}
         activeWorktreePath={activeWorktreePath}
         branchCwd={branchCwd}
-        effectiveEnvMode={effectiveEnvMode}
+        effectiveEnvMode={normalizedEnvMode}
         envLocked={envLocked}
         onSetThreadBranch={setThreadBranch}
         {...(onCheckoutPullRequestRequest ? { onCheckoutPullRequestRequest } : {})}

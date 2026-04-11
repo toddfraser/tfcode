@@ -41,6 +41,7 @@ import { checkpointRefForThreadTurn } from "../../checkpointing/Utils.ts";
 import { ServerConfig } from "../../config.ts";
 import { WorkspaceEntriesLive } from "../../workspace/Layers/WorkspaceEntries.ts";
 import { WorkspacePathsLive } from "../../workspace/Layers/WorkspacePaths.ts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 
 const asProjectId = (value: string): ProjectId => ProjectId.makeUnsafe(value);
 const asTurnId = (value: string): TurnId => TurnId.makeUnsafe(value);
@@ -263,6 +264,15 @@ describe("CheckpointReactor", () => {
       prefix: "t3-checkpoint-reactor-test-",
     });
 
+    const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+      checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+      list: () => Effect.succeed([]),
+      switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+      remove: () => Effect.void,
+    } as any);
+
     const layer = CheckpointReactorLive.pipe(
       Layer.provideMerge(orchestrationLayer),
       Layer.provideMerge(RuntimeReceiptBusLive),
@@ -271,6 +281,7 @@ describe("CheckpointReactor", () => {
       Layer.provideMerge(WorkspaceEntriesLive.pipe(Layer.provide(WorkspacePathsLive))),
       Layer.provideMerge(WorkspacePathsLive),
       Layer.provideMerge(GitCoreLive),
+      Layer.provideMerge(WorktrunkTestLayer),
       Layer.provideMerge(ServerConfigLayer),
       Layer.provideMerge(NodeServices.layer),
     );
