@@ -163,17 +163,21 @@ const ProviderLayerLive = Layer.unwrap(
 
 const PersistenceLayerLive = Layer.empty.pipe(Layer.provideMerge(SqlitePersistenceLayerLive));
 
+const WorktrunkLayerLive = WorktrunkLive.pipe(Layer.provideMerge(ServerSettingsLive));
+
 const GitManagerLayerLive = GitManagerLive.pipe(
   Layer.provideMerge(ProjectSetupScriptRunnerLive),
   Layer.provideMerge(GitCoreLive),
   Layer.provideMerge(GitHubCliLive),
   Layer.provideMerge(RoutingTextGenerationLive),
+  Layer.provideMerge(WorktrunkLayerLive),
 );
 
 const GitLayerLive = Layer.empty.pipe(
   Layer.provideMerge(GitManagerLayerLive),
   Layer.provideMerge(GitStatusBroadcasterLive.pipe(Layer.provide(GitManagerLayerLive))),
   Layer.provideMerge(GitCoreLive),
+  Layer.provideMerge(WorktrunkLayerLive),
 );
 
 const TerminalLayerLive = TerminalManagerLive.pipe(Layer.provide(PtyAdapterLive));
