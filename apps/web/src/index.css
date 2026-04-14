@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark, .dark *));
+/* Window Controls Overlay: active when Electron exposes native titlebar control geometry. */
+@custom-variant wco (&:is(.wco, .wco *));
 
 @theme inline {
   --animate-skeleton: skeleton 2s -1s infinite linear;
@@ -29,11 +31,6 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -41,40 +38,6 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-
-  /* Unified font families: SF Pro (sans) / SF Mono (mono) */
-  --font-sans: "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  --font-mono: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-heading:
-    "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-
-  /* Neutralize all font-weight emphasis until we decide what needs it */
-  --font-weight-thin: 400;
-  --font-weight-extralight: 400;
-  --font-weight-light: 400;
-  --font-weight-normal: 400;
-  --font-weight-medium: 400;
-  --font-weight-semibold: 400;
-  --font-weight-bold: 400;
-  --font-weight-extrabold: 400;
-  --font-weight-black: 400;
-
-  /* Unified font sizes */
-  --text-xs: 12px;
-  --text-xs--line-height: 16px;
-  --text-sm: 14px;
-  --text-sm--line-height: 20px;
-  --text-base: 14px;
-  --text-base--line-height: 20px;
-  --text-lg: 14px;
-  --text-lg--line-height: 20px;
-  --text-xl: 14px;
-  --text-xl--line-height: 20px;
-  --text-2xl: 14px;
-  --text-2xl--line-height: 20px;
-  --text-3xl: 14px;
-  --text-3xl--line-height: 20px;
-
   @keyframes skeleton {
     to {
       background-position: -200% 0;
@@ -86,8 +49,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    background-color: var(--app-chrome-background);
+  }
   body {
-    @apply bg-background text-foreground relative;
+    @apply text-foreground relative;
+    background-color: var(--app-chrome-background);
   }
 }
 
@@ -104,6 +71,7 @@
   color-scheme: light;
   --radius: 0.625rem;
   --background: var(--color-white);
+  --app-chrome-background: var(--background);
   --foreground: var(--color-neutral-800);
   --card: var(--color-white);
   --card-foreground: var(--color-neutral-800);
@@ -126,17 +94,13 @@
   --info-foreground: var(--color-blue-700);
   --success: var(--color-emerald-500);
   --success-foreground: var(--color-emerald-700);
-  --sidebar: var(--color-neutral-50);
-  --sidebar-foreground: var(--color-neutral-800);
-  --sidebar-accent: --alpha(var(--color-black) / 6%);
-  --sidebar-accent-foreground: var(--color-neutral-800);
-  --sidebar-border: --alpha(var(--color-black) / 8%);
   --warning: var(--color-amber-500);
   --warning-foreground: var(--color-amber-700);
 
   @variant dark {
     color-scheme: dark;
     --background: color-mix(in srgb, var(--color-neutral-950) 95%, var(--color-white));
+    --app-chrome-background: var(--background);
     --foreground: var(--color-neutral-100);
     --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
     --card-foreground: var(--color-neutral-100);
@@ -159,11 +123,6 @@
     --info-foreground: var(--color-blue-400);
     --success: var(--color-emerald-500);
     --success-foreground: var(--color-emerald-400);
-    --sidebar: color-mix(in srgb, var(--color-neutral-950) 90%, var(--color-white));
-    --sidebar-foreground: var(--color-neutral-100);
-    --sidebar-accent: --alpha(var(--color-white) / 6%);
-    --sidebar-accent-foreground: var(--color-neutral-100);
-    --sidebar-border: --alpha(var(--color-white) / 8%);
     --warning: var(--color-amber-500);
     --warning-foreground: var(--color-amber-400);
   }
@@ -171,14 +130,12 @@
 
 body {
   font-family:
-    "SF Pro",
-    "SF Pro Display",
+    "DM Sans",
     -apple-system,
     BlinkMacSystemFont,
+    "Segoe UI",
     system-ui,
     sans-serif;
-  font-size: 14px;
-  line-height: 20px;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -210,7 +167,6 @@ body::after {
 pre,
 code {
   font-family: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  font-size: 12px;
 }
 
 /* Window drag region (frameless titlebar) */
@@ -365,7 +321,7 @@ label:has(> select#reasoning-effort) select {
   background: var(--muted);
   padding: 0.1rem 0.35rem;
   color: var(--foreground);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .chat-markdown pre {
@@ -381,17 +337,18 @@ label:has(> select#reasoning-effort) select {
   border: none;
   background: transparent;
   padding: 0;
-  line-height: 1.5;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .chat-markdown .chat-markdown-codeblock {
+  --chat-markdown-codeblock-copy-button-space: 1.5rem;
   position: relative;
   margin: 0.65rem 0;
 }
 
 .chat-markdown .chat-markdown-codeblock pre {
   margin: 0;
+  padding-right: calc(0.9rem + var(--chat-markdown-codeblock-copy-button-space));
 }
 
 .chat-markdown .chat-markdown-copy-button {
@@ -408,6 +365,7 @@ label:has(> select#reasoning-effort) select {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--background) 82%, transparent);
   color: var(--muted-foreground);
+  cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transition:

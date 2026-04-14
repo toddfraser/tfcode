@@ -908,51 +908,52 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
     ).pipe(Effect.asVoid);
   };
 
-  const resolveGitCommonDir = Effect.fn("resolveGitCommonDir")(function* (cwd: string) {
-    const gitCommonDir = yield* runGitStdout("GitCore.resolveGitCommonDir", cwd, [
-      "rev-parse",
-      "--git-common-dir",
-    ]).pipe(Effect.map((stdout) => stdout.trim()));
-    return path.isAbsolute(gitCommonDir) ? gitCommonDir : path.resolve(cwd, gitCommonDir);
-  });
+  const resolveGitCommonDir = (cwd: string): Effect.Effect<string, GitCommandError, never> =>
+    runGitStdout("GitCore.resolveGitCommonDir", cwd, ["rev-parse", "--git-common-dir"]).pipe(
+      Effect.map((stdout) => stdout.trim()),
+      Effect.map((gitCommonDir) =>
+        path.isAbsolute(gitCommonDir) ? gitCommonDir : path.resolve(cwd, gitCommonDir),
+      ),
+    );
 
-  const refreshStatusUpstreamCacheEntry = Effect.fn("refreshStatusUpstreamCacheEntry")(function* (
+  const refreshStatusUpstreamCacheEntry = (
     cacheKey: StatusUpstreamRefreshCacheKey,
-  ) {
-    yield* fetchUpstreamRefForStatus(cacheKey.gitCommonDir, {
+  ): Effect.Effect<true, GitCommandError, never> =>
+    fetchUpstreamRefForStatus(cacheKey.gitCommonDir, {
       upstreamRef: cacheKey.upstreamRef,
       remoteName: cacheKey.remoteName,
       upstreamBranch: cacheKey.upstreamBranch,
-    });
-    return true as const;
-  });
+    }).pipe(Effect.as(true as const));
 
-  const statusUpstreamRefreshCache = yield* Cache.makeWith({
+  const statusUpstreamRefreshCache = yield* Cache.makeWith(refreshStatusUpstreamCacheEntry, {
     capacity: STATUS_UPSTREAM_REFRESH_CACHE_CAPACITY,
-    lookup: refreshStatusUpstreamCacheEntry,
     // Keep successful refreshes warm and briefly back off failed refreshes to avoid retry storms.
-    timeToLive: (exit) =>
+    timeToLive: (exit: Exit.Exit<true, GitCommandError>) =>
       Exit.isSuccess(exit)
         ? STATUS_UPSTREAM_REFRESH_INTERVAL
         : STATUS_UPSTREAM_REFRESH_FAILURE_COOLDOWN,
   });
 
-  const refreshStatusUpstreamIfStale = Effect.fn("refreshStatusUpstreamIfStale")(function* (
-    cwd: string,
-  ) {
-    const upstream = yield* resolveCurrentUpstream(cwd);
-    if (!upstream) return;
-    const gitCommonDir = yield* resolveGitCommonDir(cwd);
-    yield* Cache.get(
-      statusUpstreamRefreshCache,
-      new StatusUpstreamRefreshCacheKey({
-        gitCommonDir,
-        upstreamRef: upstream.upstreamRef,
-        remoteName: upstream.remoteName,
-        upstreamBranch: upstream.upstreamBranch,
-      }),
-    );
-  });
+  const refreshStatusUpstreamIfStale = (cwd: string): Effect.Effect<void, never, never> =>
+    Effect.gen(function* () {
+      const upstream = yield* resolveCurrentUpstream(cwd).pipe(
+        Effect.catchCause(() => Effect.succeed(null)),
+      );
+      if (!upstream) return;
+      const gitCommonDir = yield* resolveGitCommonDir(cwd).pipe(
+        Effect.catchCause(() => Effect.succeed(null)),
+      );
+      if (gitCommonDir === null) return;
+      yield* Cache.get(
+        statusUpstreamRefreshCache,
+        new StatusUpstreamRefreshCacheKey({
+          gitCommonDir,
+          upstreamRef: upstream.upstreamRef,
+          remoteName: upstream.remoteName,
+          upstreamBranch: upstream.upstreamBranch,
+        }),
+      ).pipe(Effect.catchCause(() => Effect.void));
+    });
 
   const resolveDefaultBranchName = (
     cwd: string,
@@ -1317,7 +1318,7 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
   );
 
   const statusDetails: GitCoreShape["statusDetails"] = Effect.fn("statusDetails")(function* (cwd) {
-    yield* refreshStatusUpstreamIfStale(cwd).pipe(Effect.ignoreCause({ log: true }));
+    yield* refreshStatusUpstreamIfStale(cwd);
     return yield* readStatusDetailsLocal(cwd);
   });
 
