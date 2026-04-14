@@ -177,7 +177,12 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
 
       <Button
         variant="ghost"
-        className="shrink-0 whitespace-nowrap px-2 text-muted-foreground/70 hover:text-foreground/80 sm:px-3"
+        className={cn(
+          "shrink-0 whitespace-nowrap px-2 sm:px-3",
+          props.interactionMode === "plan"
+            ? "border border-orange-400/35 bg-orange-500/10 text-orange-700 shadow-[0_0_0_1px_rgba(251,146,60,0.08)] hover:bg-orange-500/14 hover:text-orange-800 dark:text-orange-300 dark:hover:text-orange-200"
+            : "text-muted-foreground/70 hover:text-foreground/80",
+        )}
         size="sm"
         type="button"
         onClick={props.onToggleInteractionMode}
@@ -187,7 +192,7 @@ const ComposerFooterModeControls = memo(function ComposerFooterModeControls(prop
             : "Default mode — click to enter plan mode"
         }
       >
-        <BotIcon />
+        {props.interactionMode === "plan" ? <ListTodoIcon /> : <BotIcon />}
         <span className="sr-only sm:not-sr-only">
           {props.interactionMode === "plan" ? "Plan" : "Build"}
         </span>
@@ -1734,7 +1739,10 @@ export const ChatComposer = memo(
         >
           <div
             className={cn(
-              "rounded-[20px] border bg-card transition-colors duration-200 has-focus-visible:border-ring/45",
+              "rounded-[20px] border bg-card transition-colors duration-200",
+              interactionMode === "plan"
+                ? "has-focus-visible:border-orange-400/60"
+                : "has-focus-visible:border-ring/45",
               isDragOverComposer ? "border-primary/70 bg-accent/30" : "border-border",
               composerProviderState.composerSurfaceClassName,
             )}
