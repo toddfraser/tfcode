@@ -15,6 +15,7 @@ import {
   ProjectWriteFileError,
   OrchestrationReplayEventsError,
   ThreadId,
+  type ServerSettings,
   type TerminalEvent,
   WS_METHODS,
   WsRpcGroup,
@@ -47,6 +48,7 @@ import { WorkspaceEntries } from "./workspace/Services/WorkspaceEntries";
 import { WorkspaceFileSystem } from "./workspace/Services/WorkspaceFileSystem";
 import { WorkspacePathOutsideRootError } from "./workspace/Services/WorkspacePaths";
 import { ProjectSetupScriptRunner } from "./project/Services/ProjectSetupScriptRunner";
+import { Worktrunk } from "./worktrunk/Services/Worktrunk";
 
 const WsRpcLayer = WsRpcGroup.toLayer(
   Effect.gen(function* () {
@@ -67,8 +69,17 @@ const WsRpcLayer = WsRpcGroup.toLayer(
     const workspaceEntries = yield* WorkspaceEntries;
     const workspaceFileSystem = yield* WorkspaceFileSystem;
     const projectSetupScriptRunner = yield* ProjectSetupScriptRunner;
+    const worktrunk = yield* Worktrunk;
     const serverCommandId = (tag: string) =>
       CommandId.makeUnsafe(`server:${tag}:${crypto.randomUUID()}`);
+
+    const loadWorktrunkAvailability = (settings: ServerSettings) =>
+      settings.providers.worktrunk.enabled
+        ? worktrunk.checkInstalled().pipe(
+            Effect.map(() => true),
+            Effect.catch(() => Effect.succeed(false)),
+          )
+        : Effect.succeed(false);
 
     const appendSetupScriptActivity = (input: {
       readonly threadId: ThreadId;
@@ -274,7 +285,6 @@ const WsRpcLayer = WsRpcGroup.toLayer(
               cwd: bootstrap.prepareWorktree.projectCwd,
               branch: bootstrap.prepareWorktree.baseBranch,
               newBranch: bootstrap.prepareWorktree.branch,
-              path: null,
             });
             targetWorktreePath = worktree.worktree.path;
             yield* orchestrationEngine.dispatch({
@@ -329,6 +339,7 @@ const WsRpcLayer = WsRpcGroup.toLayer(
       const keybindingsConfig = yield* keybindings.loadConfigState;
       const providers = yield* providerRegistry.getProviders;
       const settings = yield* serverSettings.getSettings;
+      const worktrunkAvailable = yield* loadWorktrunkAvailability(settings);
 
       return {
         cwd: config.cwd,
@@ -346,6 +357,7 @@ const WsRpcLayer = WsRpcGroup.toLayer(
           otlpMetricsEnabled: config.otlpMetricsUrl !== undefined,
         },
         settings,
+        worktrunkAvailable,
       };
     });
 
@@ -716,11 +728,15 @@ const WsRpcLayer = WsRpcGroup.toLayer(
               })),
             );
             const settingsUpdates = serverSettings.streamChanges.pipe(
-              Stream.map((settings) => ({
-                version: 1 as const,
-                type: "settingsUpdated" as const,
-                payload: { settings },
-              })),
+              Stream.mapEffect((settings) =>
+                loadWorktrunkAvailability(settings).pipe(
+                  Effect.map((worktrunkAvailable) => ({
+                    version: 1 as const,
+                    type: "settingsUpdated" as const,
+                    payload: { settings, worktrunkAvailable },
+                  })),
+                ),
+              ),
             );
 
             return Stream.concat(

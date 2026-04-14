@@ -103,7 +103,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarSeparator,
   SidebarTrigger,
 } from "./ui/sidebar";
 import { useThreadSelectionStore } from "../threadSelectionStore";
@@ -127,7 +126,7 @@ import {
 import { SidebarUpdatePill } from "./sidebar/SidebarUpdatePill";
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { useSettings, useUpdateSettings } from "~/hooks/useSettings";
-import { useServerKeybindings } from "../rpc/serverState";
+import { useServerKeybindings, useServerWorktrunkAvailable } from "../rpc/serverState";
 import { useSidebarThreadSummaryById } from "../storeSelectors";
 import type { Project } from "../types";
 const THREAD_PREVIEW_LIMIT = 6;
@@ -189,14 +188,14 @@ function ThreadStatusLabel({
   return (
     <span
       title={status.label}
-      className={`inline-flex items-center gap-1 text-[10px] ${status.colorClass}`}
+      className={`inline-flex shrink-0 items-center justify-center ${status.colorClass}`}
     >
       <span
         className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${
           status.pulse ? "animate-pulse" : ""
         }`}
       />
-      <span className="hidden md:inline">{status.label}</span>
+      <span className="sr-only">{status.label}</span>
     </span>
   );
 }
@@ -379,30 +378,10 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
         }}
       >
         <div className="flex min-w-0 flex-1 items-center gap-1.5 text-left">
-          {prStatus && (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <button
-                    type="button"
-                    aria-label={prStatus.tooltip}
-                    className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
-                    onClick={(event) => {
-                      props.openPrLink(event, prStatus.url);
-                    }}
-                  >
-                    <GitPullRequestIcon className="size-3" />
-                  </button>
-                }
-              />
-              <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
-            </Tooltip>
-          )}
-          {threadStatus && <ThreadStatusLabel status={threadStatus} />}
           {props.renamingThreadId === thread.id ? (
             <input
               ref={props.onRenamingInputMount}
-              className="min-w-0 flex-1 truncate text-xs bg-transparent outline-none border border-ring rounded px-0.5"
+              className="min-w-0 flex-1 truncate text-sm bg-transparent outline-none border border-ring rounded px-0.5"
               value={props.renamingTitle}
               onChange={(event) => props.setRenamingTitle(event.target.value)}
               onKeyDown={(event) => {
@@ -425,20 +404,10 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
               onClick={(event) => event.stopPropagation()}
             />
           ) : (
-            <span className="min-w-0 flex-1 truncate text-xs">{thread.title}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{thread.title}</span>
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
-          {terminalStatus && (
-            <span
-              role="img"
-              aria-label={terminalStatus.label}
-              title={terminalStatus.label}
-              className={`inline-flex items-center justify-center ${terminalStatus.colorClass}`}
-            >
-              <TerminalIcon className={`size-3 ${terminalStatus.pulse ? "animate-pulse" : ""}`} />
-            </span>
-          )}
           <div className="flex min-w-12 justify-end">
             {isConfirmingArchive ? (
               <button
@@ -453,7 +422,7 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
                 data-thread-selection-safe
                 data-testid={`thread-archive-confirm-${thread.id}`}
                 aria-label={`Confirm archive ${thread.title}`}
-                className="absolute top-1/2 right-1 inline-flex h-5 -translate-y-1/2 cursor-pointer items-center rounded-full bg-destructive/12 px-2 text-[10px] font-medium text-destructive transition-colors hover:bg-destructive/18 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-destructive/40"
+                className="absolute top-1/2 right-1 inline-flex h-5 -translate-y-1/2 cursor-pointer items-center rounded-full bg-destructive/12 px-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/18 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-destructive/40"
                 onPointerDown={(event) => {
                   event.stopPropagation();
                 }}
@@ -524,14 +493,14 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
             <span className={threadMetaClassName}>
               {props.showThreadJumpHints && props.jumpLabel ? (
                 <span
-                  className="inline-flex h-5 items-center rounded-full border border-border/80 bg-background/90 px-1.5 font-mono text-[10px] font-medium tracking-tight text-foreground shadow-sm"
+                  className="inline-flex h-5 items-center rounded-full border border-border/80 bg-background/90 px-1.5 font-mono text-xs font-medium tracking-tight text-foreground shadow-sm"
                   title={props.jumpLabel}
                 >
                   {props.jumpLabel}
                 </span>
               ) : (
                 <span
-                  className={`text-[10px] ${
+                  className={`text-xs ${
                     isHighlighted
                       ? "text-foreground/72 dark:text-foreground/82"
                       : "text-muted-foreground/40"
@@ -542,25 +511,41 @@ function SidebarThreadRow(props: SidebarThreadRowProps) {
               )}
             </span>
           </div>
+          <div className="flex shrink-0 items-center gap-1.5 transition-opacity duration-150 group-hover/menu-sub-item:opacity-0 group-focus-within/menu-sub-item:opacity-0">
+            {threadStatus && <ThreadStatusLabel status={threadStatus} />}
+            {prStatus && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <button
+                      type="button"
+                      aria-label={prStatus.tooltip}
+                      className={`inline-flex items-center justify-center ${prStatus.colorClass} cursor-pointer rounded-sm outline-hidden focus-visible:ring-1 focus-visible:ring-ring`}
+                      onClick={(event) => {
+                        props.openPrLink(event, prStatus.url);
+                      }}
+                    >
+                      <GitPullRequestIcon className="size-3" />
+                    </button>
+                  }
+                />
+                <TooltipPopup side="top">{prStatus.tooltip}</TooltipPopup>
+              </Tooltip>
+            )}
+            {terminalStatus && (
+              <span
+                role="img"
+                aria-label={terminalStatus.label}
+                title={terminalStatus.label}
+                className={`inline-flex items-center justify-center ${terminalStatus.colorClass}`}
+              >
+                <TerminalIcon className={`size-3 ${terminalStatus.pulse ? "animate-pulse" : ""}`} />
+              </span>
+            )}
+          </div>
         </div>
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
-  );
-}
-
-function T3Wordmark() {
-  return (
-    <svg
-      aria-label="T3"
-      className="h-2.5 w-auto shrink-0 text-foreground"
-      viewBox="15.5309 37 94.3941 56.96"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M33.4509 93V47.56H15.5309V37H64.3309V47.56H46.4109V93H33.4509ZM86.7253 93.96C82.832 93.96 78.9653 93.4533 75.1253 92.44C71.2853 91.3733 68.032 89.88 65.3653 87.96L70.4053 78.04C72.5386 79.5867 75.0186 80.8133 77.8453 81.72C80.672 82.6267 83.5253 83.08 86.4053 83.08C89.6586 83.08 92.2186 82.44 94.0853 81.16C95.952 79.88 96.8853 78.12 96.8853 75.88C96.8853 73.7467 96.0586 72.0667 94.4053 70.84C92.752 69.6133 90.0853 69 86.4053 69H80.4853V60.44L96.0853 42.76L97.5253 47.4H68.1653V37H107.365V45.4L91.8453 63.08L85.2853 59.32H89.0453C95.9253 59.32 101.125 60.8667 104.645 63.96C108.165 67.0533 109.925 71.0267 109.925 75.88C109.925 79.0267 109.099 81.9867 107.445 84.76C105.792 87.48 103.259 89.6933 99.8453 91.4C96.432 93.1067 92.0586 93.96 86.7253 93.96Z"
-        fill="currentColor"
-      />
-    </svg>
   );
 }
 
@@ -662,7 +647,7 @@ function SortableProjectItem({
         transform: CSS.Translate.toString(transform),
         transition,
       }}
-      className={`group/menu-item relative rounded-md ${
+      className={`group/menu-item relative mt-3 rounded-md first:mt-0 ${
         isDragging ? "z-20 opacity-80" : ""
       } ${isOver && !isDragging ? "ring-1 ring-primary/40" : ""}`}
       data-sidebar="menu-item"
@@ -699,6 +684,7 @@ export default function Sidebar() {
   const pathname = useLocation({ select: (loc) => loc.pathname });
   const isOnSettings = pathname.startsWith("/settings");
   const appSettings = useSettings();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const { updateSettings } = useUpdateSettings();
   const { activeDraftThread, activeThread, handleNewThread } = useHandleNewThread();
   const { archiveThread, deleteThread } = useThreadActions();
@@ -869,7 +855,10 @@ export default function Sidebar() {
           createdAt,
         });
         await handleNewThread(projectId, {
-          envMode: appSettings.defaultThreadEnvMode,
+          envMode: resolveSidebarNewThreadEnvMode({
+            defaultEnvMode: appSettings.defaultThreadEnvMode,
+            worktrunkAvailable,
+          }),
         }).catch(() => undefined);
       } catch (error) {
         const description =
@@ -895,6 +884,7 @@ export default function Sidebar() {
       projects,
       shouldBrowseForProjectImmediately,
       appSettings.defaultThreadEnvMode,
+      worktrunkAvailable,
     ],
   );
 
@@ -1690,7 +1680,7 @@ export default function Sidebar() {
                     element.select();
                   }
                 }}
-                className="min-w-0 flex-1 truncate rounded border border-ring bg-transparent px-0.5 text-xs font-medium text-foreground/90 outline-none"
+                className="min-w-0 flex-1 truncate rounded border border-ring bg-transparent px-0.5 text-sm font-medium text-foreground/90 outline-none"
                 value={renamingProjectTitle}
                 onChange={(event) => setRenamingProjectTitle(event.target.value)}
                 onKeyDown={(event) => {
@@ -1714,7 +1704,7 @@ export default function Sidebar() {
                 onPointerDown={(event) => event.stopPropagation()}
               />
             ) : (
-              <span className="flex-1 truncate text-xs font-medium text-foreground/90">
+              <span className="flex-1 truncate text-sm font-medium text-foreground/90">
                 {project.name}
               </span>
             )}
@@ -1739,6 +1729,7 @@ export default function Sidebar() {
                       projectId: project.id,
                       defaultEnvMode: resolveSidebarNewThreadEnvMode({
                         defaultEnvMode: appSettings.defaultThreadEnvMode,
+                        worktrunkAvailable,
                       }),
                       activeThread:
                         activeThread && activeThread.projectId === project.id
@@ -1785,7 +1776,7 @@ export default function Sidebar() {
             <SidebarMenuSubItem className="w-full" data-thread-selection-safe>
               <div
                 data-thread-selection-safe
-                className="flex h-6 w-full translate-x-0 items-center px-2 text-left text-[10px] text-muted-foreground/60"
+                className="flex h-6 w-full translate-x-0 items-center px-2 text-left text-xs text-muted-foreground/60"
               >
                 <span>No threads yet</span>
               </div>
@@ -1830,7 +1821,7 @@ export default function Sidebar() {
                 render={<button type="button" />}
                 data-thread-selection-safe
                 size="sm"
-                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-[10px] text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
+                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-xs text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
                 onClick={() => {
                   expandThreadListForProject(project.id);
                 }}
@@ -1848,7 +1839,7 @@ export default function Sidebar() {
                 render={<button type="button" />}
                 data-thread-selection-safe
                 size="sm"
-                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-[10px] text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
+                className="h-6 w-full translate-x-0 justify-start px-2 text-left text-xs text-muted-foreground/60 hover:bg-accent hover:text-muted-foreground/80"
                 onClick={() => {
                   collapseThreadListForProject(project.id);
                 }}
@@ -2054,11 +2045,11 @@ export default function Sidebar() {
               className="ml-1 flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-md outline-hidden ring-ring transition-colors hover:text-foreground focus-visible:ring-2"
               to="/"
             >
-              <T3Wordmark />
-              <span className="truncate text-sm font-medium tracking-tight text-muted-foreground">
-                Code
+              <span className="text-sm tracking-tight text-foreground" style={{ fontWeight: 700 }}>
+                TF
               </span>
-              <span className="rounded-full bg-muted/50 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
+              <span className="truncate text-sm tracking-tight text-muted-foreground">Code</span>
+              <span className="inline-flex h-4 items-center rounded-full bg-muted/50 px-1.5 text-[8px] font-medium uppercase tracking-[0.18em] text-muted-foreground/60">
                 {APP_STAGE_LABEL}
               </span>
             </Link>
@@ -2113,7 +2104,7 @@ export default function Sidebar() {
             ) : null}
             <SidebarGroup className="px-2 py-2">
               <div className="mb-1 flex items-center justify-between pl-2 pr-1.5">
-                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
                   Projects
                 </span>
                 <div className="flex items-center gap-1">
@@ -2199,7 +2190,7 @@ export default function Sidebar() {
                     </button>
                   </div>
                   {addProjectError && (
-                    <p className="mt-1 px-0.5 text-[11px] leading-tight text-red-400">
+                    <p className="mt-1 px-0.5 text-xs leading-tight text-red-400">
                       {addProjectError}
                     </p>
                   )}
@@ -2234,7 +2225,10 @@ export default function Sidebar() {
               ) : (
                 <SidebarMenu ref={attachProjectListAutoAnimateRef}>
                   {renderedProjects.map((renderedProject) => (
-                    <SidebarMenuItem key={renderedProject.project.id} className="rounded-md">
+                    <SidebarMenuItem
+                      key={renderedProject.project.id}
+                      className="mt-3 rounded-md first:mt-0"
+                    >
                       {renderProjectItem(renderedProject, null)}
                     </SidebarMenuItem>
                   ))}
@@ -2249,7 +2243,6 @@ export default function Sidebar() {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarSeparator />
           <SidebarFooter className="p-2">
             <SidebarUpdatePill />
             <SidebarMenu>
@@ -2260,7 +2253,7 @@ export default function Sidebar() {
                   onClick={() => void navigate({ to: "/settings" })}
                 >
                   <SettingsIcon className="size-3.5" />
-                  <span className="text-xs">Settings</span>
+                  <span className="text-sm">Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

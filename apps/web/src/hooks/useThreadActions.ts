@@ -143,10 +143,20 @@ export function useThreadActions() {
         return;
       }
 
+      if (!thread.branch) {
+        toastManager.add({
+          type: "error",
+          title: "Thread deleted, but worktree removal was skipped",
+          description: `Could not remove ${displayWorktreePath ?? orphanedWorktreePath} because the thread is missing its branch metadata.`,
+        });
+        return;
+      }
+
       try {
         await removeWorktreeMutation.mutateAsync({
           cwd: threadProject.cwd,
-          path: orphanedWorktreePath,
+          branch: thread.branch,
+          expectedPath: orphanedWorktreePath,
           force: true,
         });
       } catch (error) {

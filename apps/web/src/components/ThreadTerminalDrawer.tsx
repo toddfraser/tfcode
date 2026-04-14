@@ -267,7 +267,8 @@ function TerminalViewport({
       lineHeight: 1.2,
       fontSize: 12,
       scrollback: 5_000,
-      fontFamily: '"SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace',
+      fontFamily:
+        '"SF Mono", "SFMono-Regular", "JetBrainsMono Nerd Font", Consolas, "Liberation Mono", Menlo, monospace',
       theme: terminalThemeFromApp(),
     });
     terminal.loadAddon(fitAddon);
@@ -715,9 +716,7 @@ function TerminalViewport({
       window.cancelAnimationFrame(frame);
     };
   }, [drawerHeight, resizeEpoch, terminalId, threadId]);
-  return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden rounded-[4px]" />
-  );
+  return <div ref={containerRef} className="relative h-full w-full overflow-hidden" />;
 }
 
 interface ThreadTerminalDrawerProps {
@@ -1181,7 +1180,7 @@ export default function ThreadTerminalDrawer({
                       {showGroupHeaders && (
                         <button
                           type="button"
-                          className={`flex w-full items-center rounded px-1 py-0.5 text-[10px] uppercase tracking-[0.08em] ${
+                          className={`flex w-full items-center rounded px-1 py-0.5 text-xs uppercase tracking-[0.08em] ${
                             isGroupActive
                               ? "bg-accent/70 text-foreground"
                               : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
@@ -1205,14 +1204,14 @@ export default function ThreadTerminalDrawer({
                           return (
                             <div
                               key={terminalId}
-                              className={`group flex items-center gap-1 rounded px-1 py-0.5 text-[11px] ${
+                              className={`group flex items-center gap-1 rounded px-1 py-0.5 text-xs ${
                                 isActive
                                   ? "bg-accent text-foreground"
                                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
                               }`}
                             >
                               {showGroupHeaders && (
-                                <span className="text-[10px] text-muted-foreground/80">└</span>
+                                <span className="text-xs text-muted-foreground/80">└</span>
                               )}
                               <button
                                 type="button"

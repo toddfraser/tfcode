@@ -14,7 +14,7 @@ import {
   type VirtualItem,
   useVirtualizer,
 } from "@tanstack/react-virtual";
-import { deriveTimelineEntries, formatElapsed } from "../../session-logic";
+import { deriveTimelineEntries } from "../../session-logic";
 import { AUTO_SCROLL_BOTTOM_THRESHOLD_PX } from "../../chat-scroll";
 import { type TurnDiffSummary } from "../../types";
 import { summarizeTurnDiffStats } from "../../lib/turnDiffTree";
@@ -55,7 +55,6 @@ import {
 } from "~/lib/terminalContext";
 import { cn } from "~/lib/utils";
 import { type TimestampFormat } from "@t3tools/contracts/settings";
-import { formatTimestamp } from "../../timestampFormat";
 import {
   buildInlineTerminalContextText,
   formatInlineTerminalContextLabel,
@@ -119,7 +118,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
   onImageExpand,
   markdownCwd,
   resolvedTheme,
-  timestampFormat,
+  timestampFormat: _timestampFormat,
   workspaceRoot,
   onVirtualizerSnapshot,
 }: MessagesTimelineProps) {
@@ -331,13 +330,13 @@ export const MessagesTimeline = memo(function MessagesTimeline({
             <div className="rounded-xl border border-border/45 bg-card/25 px-2 py-1.5">
               {showHeader && (
                 <div className="mb-1.5 flex items-center justify-between gap-2 px-0.5">
-                  <p className="text-[9px] uppercase tracking-[0.16em] text-muted-foreground/55">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground/55">
                     {groupLabel} ({groupedEntries.length})
                   </p>
                   {hasOverflow && (
                     <button
                       type="button"
-                      className="text-[9px] uppercase tracking-[0.12em] text-muted-foreground/55 transition-colors duration-150 hover:text-foreground/75"
+                      className="text-xs uppercase tracking-[0.12em] text-muted-foreground/55 transition-colors duration-150 hover:text-foreground/75"
                       onClick={() => onToggleWorkGroup(groupId)}
                     >
                       {isExpanded ? "Show less" : `Show ${hiddenCount} more`}
@@ -363,7 +362,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
           const canRevertAgentWork = revertTurnCountByUserMessageId.has(row.message.id);
           return (
             <div className="flex justify-end">
-              <div className="group relative max-w-[80%] rounded-2xl rounded-br-sm border border-border bg-secondary px-4 py-3">
+              <div className="group relative max-w-[80%] rounded-2xl bg-secondary px-4 py-3">
                 {userImages.length > 0 && (
                   <div className="mb-2 grid max-w-[420px] grid-cols-2 gap-2">
                     {userImages.map(
@@ -392,7 +391,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                               />
                             </button>
                           ) : (
-                            <div className="flex min-h-[72px] items-center justify-center px-2 py-3 text-center text-[11px] text-muted-foreground/70">
+                            <div className="flex min-h-[72px] items-center justify-center px-2 py-3 text-center text-xs text-muted-foreground/70">
                               {image.name}
                             </div>
                           )}
@@ -408,27 +407,22 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                     terminalContexts={terminalContexts}
                   />
                 )}
-                <div className="mt-1.5 flex items-center justify-end gap-2">
-                  <div className="flex items-center gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
-                    {displayedUserMessage.copyText && (
-                      <MessageCopyButton text={displayedUserMessage.copyText} />
-                    )}
-                    {canRevertAgentWork && (
-                      <Button
-                        type="button"
-                        size="xs"
-                        variant="outline"
-                        disabled={isRevertingCheckpoint || isWorking}
-                        onClick={() => onRevertUserMessage(row.message.id)}
-                        title="Revert to this message"
-                      >
-                        <Undo2Icon className="size-3" />
-                      </Button>
-                    )}
-                  </div>
-                  <p className="text-right text-[10px] text-muted-foreground/30">
-                    {formatTimestamp(row.message.createdAt, timestampFormat)}
-                  </p>
+                <div className="absolute right-2 bottom-2 flex items-center gap-1.5 opacity-0 transition-opacity duration-200 focus-within:opacity-100 group-hover:opacity-100">
+                  {displayedUserMessage.copyText && (
+                    <MessageCopyButton text={displayedUserMessage.copyText} />
+                  )}
+                  {canRevertAgentWork && (
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="outline"
+                      disabled={isRevertingCheckpoint || isWorking}
+                      onClick={() => onRevertUserMessage(row.message.id)}
+                      title="Revert to this message"
+                    >
+                      <Undo2Icon className="size-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -468,7 +462,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                   return (
                     <div className="mt-2 rounded-lg border border-border/80 bg-card/45 p-2.5">
                       <div className="mb-1.5 flex items-center justify-between gap-2">
-                        <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground/65">
+                        <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground/65">
                           <span>Changed files ({changedFileCountLabel})</span>
                           {hasNonZeroStat(summaryStat) && (
                             <>
@@ -513,15 +507,6 @@ export const MessagesTimeline = memo(function MessagesTimeline({
                     </div>
                   );
                 })()}
-                <p className="mt-1.5 text-[10px] text-muted-foreground/30">
-                  {formatMessageMeta(
-                    row.message.createdAt,
-                    row.message.streaming
-                      ? formatElapsed(row.durationStart, nowIso)
-                      : formatElapsed(row.durationStart, row.message.completedAt),
-                    timestampFormat,
-                  )}
-                </p>
               </div>
             </>
           );
@@ -539,7 +524,7 @@ export const MessagesTimeline = memo(function MessagesTimeline({
 
       {row.kind === "working" && (
         <div className="py-0.5 pl-1.5">
-          <div className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground/70">
+          <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground/70">
             <span className="inline-flex items-center gap-[3px]">
               <span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse" />
               <span className="h-1 w-1 rounded-full bg-muted-foreground/30 animate-pulse [animation-delay:200ms]" />
@@ -632,15 +617,6 @@ function formatWorkingTimer(startIso: string, endIso: string): string | null {
   return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
 }
 
-function formatMessageMeta(
-  createdAt: string,
-  duration: string | null,
-  timestampFormat: TimestampFormat,
-): string {
-  if (!duration) return formatTimestamp(createdAt, timestampFormat);
-  return `${formatTimestamp(createdAt, timestampFormat)} • ${duration}`;
-}
-
 const UserMessageTerminalContextInlineLabel = memo(
   function UserMessageTerminalContextInlineLabel(props: { context: ParsedTerminalContextEntry }) {
     const tooltipText =
@@ -700,7 +676,7 @@ const UserMessageBody = memo(function UserMessageBody(props: {
         }
 
         return (
-          <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+          <div className="wrap-break-word whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
             {inlineNodes}
           </div>
         );
@@ -728,7 +704,7 @@ const UserMessageBody = memo(function UserMessageBody(props: {
     }
 
     return (
-      <div className="wrap-break-word whitespace-pre-wrap font-mono text-sm leading-relaxed text-foreground">
+      <div className="wrap-break-word whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
         {inlineNodes}
       </div>
     );
@@ -739,9 +715,9 @@ const UserMessageBody = memo(function UserMessageBody(props: {
   }
 
   return (
-    <pre className="whitespace-pre-wrap wrap-break-word font-mono text-sm leading-relaxed text-foreground">
+    <div className="whitespace-pre-wrap wrap-break-word font-sans text-sm leading-relaxed text-foreground">
       {props.text}
-    </pre>
+    </div>
   );
 });
 
@@ -868,7 +844,7 @@ const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: {
           <div className="max-w-full">
             <p
               className={cn(
-                "truncate text-[11px] leading-5",
+                "truncate text-xs leading-5",
                 workToneClass(workEntry.tone),
                 preview ? "text-muted-foreground/70" : "",
               )}
@@ -895,7 +871,7 @@ const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: {
                       className="max-w-[min(56rem,calc(100vw-2rem))] px-0 py-0"
                       side="top"
                     >
-                      <div className="max-w-[min(56rem,calc(100vw-2rem))] overflow-x-auto px-1.5 py-1 font-mono text-[11px] leading-4 whitespace-nowrap">
+                      <div className="max-w-[min(56rem,calc(100vw-2rem))] overflow-x-auto px-1.5 py-1 font-mono text-xs leading-4 whitespace-nowrap">
                         {rawCommand}
                       </div>
                     </TooltipPopup>
@@ -912,14 +888,14 @@ const SimpleWorkEntryRow = memo(function SimpleWorkEntryRow(props: {
           {workEntry.changedFiles?.slice(0, 4).map((filePath) => (
             <span
               key={`${workEntry.id}:${filePath}`}
-              className="rounded-md border border-border/55 bg-background/75 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/75"
+              className="rounded-md border border-border/55 bg-background/75 px-1.5 py-0.5 font-mono text-xs text-muted-foreground/75"
               title={filePath}
             >
               {filePath}
             </span>
           ))}
           {(workEntry.changedFiles?.length ?? 0) > 4 && (
-            <span className="px-1 text-[10px] text-muted-foreground/55">
+            <span className="px-1 text-xs text-muted-foreground/55">
               +{(workEntry.changedFiles?.length ?? 0) - 4}
             </span>
           )}

@@ -11,13 +11,23 @@ import { GitCore, type GitCoreShape } from "../Services/GitCore.ts";
 import { GitCommandError } from "@t3tools/contracts";
 import { type ProcessRunResult, runProcess } from "../../processRunner.ts";
 import { ServerConfig } from "../../config.ts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 
 // ── Helpers ──
 
 const ServerConfigLayer = ServerConfig.layerTest(process.cwd(), { prefix: "t3-git-core-test-" });
+const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+  checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+  list: () => Effect.succeed([]),
+  switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  remove: () => Effect.void,
+} as any);
 const GitCoreTestLayer = GitCoreLive.pipe(
   Layer.provide(ServerConfigLayer),
   Layer.provide(NodeServices.layer),
+  Layer.provide(WorktrunkTestLayer),
 );
 const TestLayer = Layer.mergeAll(NodeServices.layer, GitCoreTestLayer);
 
@@ -103,7 +113,11 @@ function runShellCommand(input: {
 
 const makeIsolatedGitCore = (executeOverride: GitCoreShape["execute"]) =>
   makeGitCore({ executeOverride }).pipe(
-    Effect.provide(Layer.provideMerge(ServerConfigLayer, NodeServices.layer)),
+    Effect.provide(
+      Layer.provideMerge(ServerConfigLayer, NodeServices.layer).pipe(
+        Layer.provideMerge(WorktrunkTestLayer),
+      ),
+    ),
   );
 
 /** Create a repo with an initial commit so branches work. */
@@ -1204,7 +1218,6 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
 
-        const wtPath = path.join(tmp, "worktree-out");
         const currentBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
@@ -1213,16 +1226,15 @@ it.layer(TestLayer)("git integration", (it) => {
           cwd: tmp,
           branch: currentBranch,
           newBranch: "wt-branch",
-          path: wtPath,
         });
 
-        expect(result.worktree.path).toBe(wtPath);
+        const wtPath = result.worktree.path;
         expect(result.worktree.branch).toBe("wt-branch");
         expect(existsSync(wtPath)).toBe(true);
         expect(existsSync(path.join(wtPath, "README.md"))).toBe(true);
 
         // Clean up worktree before tmp dir disposal
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-branch" });
       }),
     );
 
@@ -1231,23 +1243,22 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
 
-        const wtPath = path.join(tmp, "wt-check-dir");
         const currentBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
 
-        yield* (yield* GitCore).createWorktree({
+        const result = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: currentBranch,
           newBranch: "wt-check",
-          path: wtPath,
         });
+        const wtPath = result.worktree.path;
 
         // Verify the worktree is on the new branch
         const branchOutput = yield* git(wtPath, ["branch", "--show-current"]);
         expect(branchOutput).toBe("wt-check");
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-check" });
       }),
     );
 
@@ -1257,19 +1268,17 @@ it.layer(TestLayer)("git integration", (it) => {
         yield* initRepoWithCommit(tmp);
         yield* (yield* GitCore).createBranch({ cwd: tmp, branch: "feature/existing-worktree" });
 
-        const wtPath = path.join(tmp, "wt-existing");
         const result = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: "feature/existing-worktree",
-          path: wtPath,
         });
 
-        expect(result.worktree.path).toBe(wtPath);
+        const wtPath = result.worktree.path;
         expect(result.worktree.branch).toBe("feature/existing-worktree");
         const branchOutput = yield* git(wtPath, ["branch", "--show-current"]);
         expect(branchOutput).toBe("feature/existing-worktree");
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "feature/existing-worktree" });
       }),
     );
 
@@ -1279,7 +1288,6 @@ it.layer(TestLayer)("git integration", (it) => {
         yield* initRepoWithCommit(tmp);
         yield* (yield* GitCore).createBranch({ cwd: tmp, branch: "existing" });
 
-        const wtPath = path.join(tmp, "wt-conflict");
         const currentBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
@@ -1289,7 +1297,6 @@ it.layer(TestLayer)("git integration", (it) => {
             cwd: tmp,
             branch: currentBranch,
             newBranch: "existing",
-            path: wtPath,
           }),
         );
         expect(result._tag).toBe("Failure");
@@ -1301,17 +1308,16 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
 
-        const wtPath = path.join(tmp, "wt-list-dir");
         const mainBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
 
-        yield* (yield* GitCore).createWorktree({
+        const wtResult = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: mainBranch,
           newBranch: "wt-list",
-          path: wtPath,
         });
+        const wtPath = wtResult.worktree.path;
 
         // listGitBranches from the worktree should show wt-list as current
         const wtBranches = yield* (yield* GitCore).listBranches({ cwd: wtPath });
@@ -1324,7 +1330,7 @@ it.layer(TestLayer)("git integration", (it) => {
         const mainCurrent = mainBranches.branches.find((b) => b.current);
         expect(mainCurrent!.name).toBe(mainBranch);
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-list" });
       }),
     );
 
@@ -1333,20 +1339,19 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
 
-        const wtPath = path.join(tmp, "wt-remove-dir");
         const currentBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
 
-        yield* (yield* GitCore).createWorktree({
+        const wtResult = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: currentBranch,
           newBranch: "wt-remove",
-          path: wtPath,
         });
+        const wtPath = wtResult.worktree.path;
         expect(existsSync(wtPath)).toBe(true);
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-remove" });
         expect(existsSync(wtPath)).toBe(false);
       }),
     );
@@ -1356,28 +1361,27 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
 
-        const wtPath = path.join(tmp, "wt-dirty-dir");
         const currentBranch = (yield* (yield* GitCore).listBranches({ cwd: tmp })).branches.find(
           (b) => b.current,
         )!.name;
 
-        yield* (yield* GitCore).createWorktree({
+        const wtResult = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: currentBranch,
           newBranch: "wt-dirty",
-          path: wtPath,
         });
+        const wtPath = wtResult.worktree.path;
         expect(existsSync(wtPath)).toBe(true);
 
         yield* writeTextFile(path.join(wtPath, "README.md"), "dirty change\n");
 
         const failedRemove = yield* Effect.result(
-          (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath }),
+          (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-dirty" }),
         );
         expect(failedRemove._tag).toBe("Failure");
         expect(existsSync(wtPath)).toBe(true);
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath, force: true });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "wt-dirty", force: true });
         expect(existsSync(wtPath)).toBe(false);
       }),
     );
@@ -1412,13 +1416,12 @@ it.layer(TestLayer)("git integration", (it) => {
           (b) => b.current,
         )!.name;
 
-        const wtPath = path.join(tmp, "my-worktree");
         const result = yield* (yield* GitCore).createWorktree({
           cwd: tmp,
           branch: currentBranch,
           newBranch: "feature-wt",
-          path: wtPath,
         });
+        const wtPath = result.worktree.path;
 
         // Worktree exists
         expect(existsSync(result.worktree.path)).toBe(true);
@@ -1432,7 +1435,7 @@ it.layer(TestLayer)("git integration", (it) => {
         const wtBranch = yield* git(wtPath, ["branch", "--show-current"]);
         expect(wtBranch).toBe("feature-wt");
 
-        yield* (yield* GitCore).removeWorktree({ cwd: tmp, path: wtPath });
+        yield* (yield* GitCore).removeWorktree({ cwd: tmp, branch: "feature-wt" });
       }),
     );
   });
@@ -1916,19 +1919,18 @@ it.layer(TestLayer)("git integration", (it) => {
         const tmp = yield* makeTmpDir();
         yield* initRepoWithCommit(tmp);
         const core = yield* GitCore;
-        const missingWorktreePath = path.join(tmp, "missing-worktree");
 
         const removeResult = yield* Effect.result(
-          core.removeWorktree({ cwd: tmp, path: missingWorktreePath }),
+          core.removeWorktree({ cwd: tmp, branch: "nonexistent-branch" }),
         );
         expect(removeResult._tag).toBe("Failure");
         if (removeResult._tag !== "Failure") {
           return;
         }
         const message = removeResult.failure.message;
-        expect(message).toContain("git worktree remove");
+        expect(message).toContain("wt remove");
         expect(message).toContain(`cwd: ${tmp}`);
-        expect(message).toContain(missingWorktreePath);
+        expect(message).toContain("nonexistent-branch");
       }),
     );
 

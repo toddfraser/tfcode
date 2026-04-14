@@ -35,7 +35,7 @@ import {
   parseRemoteNamesInGitOrder,
   parseRemoteRefWithRemoteNames,
 } from "../remoteRefs.ts";
-import { ServerConfig } from "../../config.ts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 import { decodeJsonResult } from "@t3tools/shared/schemaJson";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -631,7 +631,7 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
 }) {
   const fileSystem = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const { worktreesDir } = yield* ServerConfig;
+  const worktrunk = yield* Worktrunk;
 
   let executeRaw: GitCoreShape["execute"];
 
@@ -1753,7 +1753,7 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
       ),
     );
 
-    const [defaultRef, worktreeList, remoteBranchResult, remoteNamesResult, branchLastCommit] =
+    const [defaultRef, worktreeEntries, remoteBranchResult, remoteNamesResult, branchLastCommit] =
       yield* Effect.all(
         [
           executeGit(
@@ -1765,14 +1765,12 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
               allowNonZeroExit: true,
             },
           ),
-          executeGit(
-            "GitCore.listBranches.worktreeList",
-            input.cwd,
-            ["worktree", "list", "--porcelain"],
-            {
-              timeoutMs: 5_000,
-              allowNonZeroExit: true,
-            },
+          worktrunk.list(input.cwd).pipe(
+            Effect.catch((error) => {
+              return Effect.logWarning(
+                `GitCore.listBranches: worktrunk list failed for ${input.cwd}: ${error.message}. Falling back to empty worktree map.`,
+              ).pipe(Effect.as([] as readonly []));
+            }),
           ),
           remoteBranchResultEffect,
           remoteNamesResultEffect,
@@ -1800,21 +1798,9 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
         : null;
 
     const worktreeMap = new Map<string, string>();
-    if (worktreeList.code === 0) {
-      let currentPath: string | null = null;
-      for (const line of worktreeList.stdout.split("\n")) {
-        if (line.startsWith("worktree ")) {
-          const candidatePath = line.slice("worktree ".length);
-          const exists = yield* fileSystem.stat(candidatePath).pipe(
-            Effect.map(() => true),
-            Effect.catch(() => Effect.succeed(false)),
-          );
-          currentPath = exists ? candidatePath : null;
-        } else if (line.startsWith("branch refs/heads/") && currentPath) {
-          worktreeMap.set(line.slice("branch refs/heads/".length), currentPath);
-        } else if (line === "") {
-          currentPath = null;
-        }
+    for (const entry of worktreeEntries) {
+      if (entry.path) {
+        worktreeMap.set(entry.branch, entry.path);
       }
     }
 
@@ -1895,22 +1881,45 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
 
   const createWorktree: GitCoreShape["createWorktree"] = Effect.fn("createWorktree")(
     function* (input) {
-      const targetBranch = input.newBranch ?? input.branch;
-      const sanitizedBranch = targetBranch.replace(/\//g, "-");
-      const repoName = path.basename(input.cwd);
-      const worktreePath = input.path ?? path.join(worktreesDir, repoName, sanitizedBranch);
-      const args = input.newBranch
-        ? ["worktree", "add", "-b", input.newBranch, worktreePath, input.branch]
-        : ["worktree", "add", worktreePath, input.branch];
-
-      yield* executeGit("GitCore.createWorktree", input.cwd, args, {
-        fallbackErrorMessage: "git worktree add failed",
-      });
+      const result = input.newBranch
+        ? yield* worktrunk
+            .switchCreate({
+              cwd: input.cwd,
+              branch: input.newBranch,
+              base: input.branch,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new GitCommandError({
+                    operation: "GitCore.createWorktree",
+                    command: `wt switch --create ${input.newBranch}`,
+                    cwd: input.cwd,
+                    detail: error.message,
+                  }),
+              ),
+            )
+        : yield* worktrunk
+            .switchTo({
+              cwd: input.cwd,
+              branch: input.branch,
+            })
+            .pipe(
+              Effect.mapError(
+                (error) =>
+                  new GitCommandError({
+                    operation: "GitCore.createWorktree",
+                    command: `wt switch ${input.branch}`,
+                    cwd: input.cwd,
+                    detail: error.message,
+                  }),
+              ),
+            );
 
       return {
         worktree: {
-          path: worktreePath,
-          branch: targetBranch,
+          path: result.path,
+          branch: result.branch,
         },
       };
     },
@@ -1968,25 +1977,56 @@ export const makeGitCore = Effect.fn("makeGitCore")(function* (options?: {
 
   const removeWorktree: GitCoreShape["removeWorktree"] = Effect.fn("removeWorktree")(
     function* (input) {
-      const args = ["worktree", "remove"];
-      if (input.force) {
-        args.push("--force");
-      }
-      args.push(input.path);
-      yield* executeGit("GitCore.removeWorktree", input.cwd, args, {
-        timeoutMs: 15_000,
-        fallbackErrorMessage: "git worktree remove failed",
-      }).pipe(
-        Effect.mapError((error) =>
-          createGitCommandError(
-            "GitCore.removeWorktree",
-            input.cwd,
-            args,
-            `${commandLabel(args)} failed (cwd: ${input.cwd}): ${error instanceof Error ? error.message : String(error)}`,
-            error,
+      if (input.expectedPath) {
+        const entries = yield* worktrunk.list(input.cwd).pipe(
+          Effect.mapError(
+            (error) =>
+              new GitCommandError({
+                operation: "GitCore.removeWorktree",
+                command: `wt list --format=json`,
+                cwd: input.cwd,
+                detail: error.message,
+              }),
           ),
-        ),
-      );
+        );
+        const matchingEntry = entries.find(
+          (entry) => entry.branch === input.branch && typeof entry.path === "string",
+        );
+        if (!matchingEntry?.path) {
+          return yield* new GitCommandError({
+            operation: "GitCore.removeWorktree",
+            command: `wt remove ${input.branch}`,
+            cwd: input.cwd,
+            detail: `No worktree is currently registered for branch "${input.branch}".`,
+          });
+        }
+        if (path.normalize(matchingEntry.path) !== path.normalize(input.expectedPath)) {
+          return yield* new GitCommandError({
+            operation: "GitCore.removeWorktree",
+            command: `wt remove ${input.branch}`,
+            cwd: input.cwd,
+            detail: `Branch "${input.branch}" points to "${matchingEntry.path}", not "${input.expectedPath}".`,
+          });
+        }
+      }
+
+      yield* worktrunk
+        .remove({
+          cwd: input.cwd,
+          branch: input.branch,
+          ...(input.force ? { force: input.force } : {}),
+        })
+        .pipe(
+          Effect.mapError(
+            (error) =>
+              new GitCommandError({
+                operation: "GitCore.removeWorktree",
+                command: `wt remove ${input.branch}`,
+                cwd: input.cwd,
+                detail: error.message,
+              }),
+          ),
+        );
     },
   );
 

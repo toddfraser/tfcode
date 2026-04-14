@@ -9,7 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
 } from "../ui/sidebar";
 
 export type SettingsSectionPath = "/settings/general" | "/settings/archived";
@@ -41,8 +40,8 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                     isActive={isActive}
                     className={
                       isActive
-                        ? "gap-2 px-2 py-2 text-left text-xs text-foreground"
-                        : "gap-2 px-2 py-2 text-left text-xs text-muted-foreground hover:text-foreground/80"
+                        ? "gap-2 px-2 py-2 text-left text-sm text-foreground"
+                        : "gap-2 px-2 py-2 text-left text-sm text-muted-foreground hover:text-foreground/80"
                     }
                     onClick={() => void navigate({ to: item.to, replace: true })}
                   >
@@ -62,13 +61,12 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarSeparator />
       <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="sm"
-              className="gap-2 px-2 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="gap-2 px-2 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => window.history.back()}
             >
               <ArrowLeftIcon className="size-4" />

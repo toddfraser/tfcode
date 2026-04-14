@@ -8,7 +8,7 @@ import { selectThreadTerminalState, useTerminalStateStore } from "../terminalSta
 import { useThreadSelectionStore } from "../threadSelectionStore";
 import { resolveSidebarNewThreadEnvMode } from "~/components/Sidebar.logic";
 import { useSettings } from "~/hooks/useSettings";
-import { useServerKeybindings } from "~/rpc/serverState";
+import { useServerKeybindings, useServerWorktrunkAvailable } from "~/rpc/serverState";
 
 function ChatRouteGlobalShortcuts() {
   const clearSelection = useThreadSelectionStore((state) => state.clearSelection);
@@ -16,6 +16,7 @@ function ChatRouteGlobalShortcuts() {
   const { activeDraftThread, activeThread, defaultProjectId, handleNewThread, routeThreadId } =
     useHandleNewThread();
   const keybindings = useServerKeybindings();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const terminalOpen = useTerminalStateStore((state) =>
     routeThreadId
       ? selectThreadTerminalState(state.terminalStateByThreadId, routeThreadId).terminalOpen
@@ -49,6 +50,7 @@ function ChatRouteGlobalShortcuts() {
         void handleNewThread(projectId, {
           envMode: resolveSidebarNewThreadEnvMode({
             defaultEnvMode: appSettings.defaultThreadEnvMode,
+            worktrunkAvailable,
           }),
         });
         return;
@@ -81,6 +83,7 @@ function ChatRouteGlobalShortcuts() {
     selectedThreadIdsSize,
     terminalOpen,
     appSettings.defaultThreadEnvMode,
+    worktrunkAvailable,
   ]);
 
   return null;

@@ -995,6 +995,8 @@ export default function ChatView({ threadId }: ChatViewProps) {
     : null;
   const serverConfig = useServerConfig();
   const providerStatuses = serverConfig?.providers ?? EMPTY_PROVIDERS;
+  const canCreateWorktrees =
+    settings.providers.worktrunk.enabled && Boolean(serverConfig?.worktrunkAvailable);
   const unlockedSelectedProvider = resolveSelectableProvider(
     providerStatuses,
     selectedProviderByThreadId ?? threadProvider ?? "codex",
@@ -2512,7 +2514,9 @@ export default function ChatView({ threadId }: ChatViewProps) {
   const envMode: DraftThreadEnvMode = activeWorktreePath
     ? "worktree"
     : isLocalDraftThread
-      ? (draftThread?.envMode ?? "local")
+      ? draftThread?.envMode === "worktree" && !canCreateWorktrees
+        ? "local"
+        : (draftThread?.envMode ?? "local")
       : "local";
 
   useEffect(() => {
@@ -3929,7 +3933,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
       {/* Top bar */}
       <header
         className={cn(
-          "border-b border-border px-3 sm:px-5",
+          "px-3 sm:px-5",
           isElectron ? "drag-region flex h-[52px] items-center" : "py-2 sm:py-3",
         )}
       >
@@ -4050,7 +4054,10 @@ export default function ChatView({ threadId }: ChatViewProps) {
               >
                 <div
                   className={cn(
-                    "rounded-[20px] border bg-card transition-colors duration-200 has-focus-visible:border-ring/45",
+                    "rounded-[20px] border bg-card shadow-xs/5 transition-colors duration-200",
+                    interactionMode === "plan"
+                      ? "has-focus-visible:border-orange-400/60"
+                      : "has-focus-visible:border-ring/45",
                     isDragOverComposer ? "border-primary/70 bg-accent/30" : "border-border",
                     composerProviderState.composerSurfaceClassName,
                   )}
@@ -4131,7 +4138,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
                                   />
                                 </button>
                               ) : (
-                                <div className="flex h-full w-full items-center justify-center px-1 text-center text-[10px] text-muted-foreground/70">
+                                <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-muted-foreground/70">
                                   {image.name}
                                 </div>
                               )}
@@ -4294,7 +4301,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
                                   : "Default mode — click to enter plan mode"
                               }
                             >
-                              <BotIcon />
+                              {interactionMode === "plan" ? <ListTodoIcon /> : <BotIcon />}
                               <span className="sr-only sm:not-sr-only">
                                 {interactionMode === "plan" ? "Plan" : "Build"}
                               </span>
@@ -4393,6 +4400,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
                           showPlanFollowUpPrompt={
                             pendingUserInputs.length === 0 && showPlanFollowUpPrompt
                           }
+                          isPlanMode={interactionMode === "plan"}
                           promptHasText={prompt.trim().length > 0}
                           isSendBusy={isSendBusy}
                           isConnecting={isConnecting}
@@ -4427,6 +4435,7 @@ export default function ChatView({ threadId }: ChatViewProps) {
               open
               threadId={activeThread.id}
               cwd={activeProject?.cwd ?? null}
+              canPrepareWorktree={canCreateWorktrees}
               initialReference={pullRequestDialogState.initialReference}
               onOpenChange={(open) => {
                 if (!open) {

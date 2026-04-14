@@ -10,11 +10,21 @@ import { GitCore } from "../../git/Services/GitCore.ts";
 import { WorkspaceEntries } from "../Services/WorkspaceEntries.ts";
 import { WorkspaceEntriesLive } from "./WorkspaceEntries.ts";
 import { WorkspacePathsLive } from "./WorkspacePaths.ts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 
+const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+  checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+  list: () => Effect.succeed([]),
+  switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  remove: () => Effect.void,
+} as any);
 const TestLayer = Layer.empty.pipe(
   Layer.provideMerge(WorkspaceEntriesLive.pipe(Layer.provide(WorkspacePathsLive))),
   Layer.provideMerge(WorkspacePathsLive),
   Layer.provideMerge(GitCoreLive),
+  Layer.provide(WorktrunkTestLayer),
   Layer.provide(
     ServerConfig.layerTest(process.cwd(), {
       prefix: "t3-workspace-entries-test-",

@@ -53,6 +53,8 @@ const selectKeybindingsConfigPath = (config: ServerConfig | null) =>
 const selectObservability = (config: ServerConfig | null) => config?.observability ?? null;
 const selectProviders = (config: ServerConfig | null) =>
   config?.providers ?? EMPTY_SERVER_PROVIDERS;
+const selectWorktrunkAvailable = (config: ServerConfig | null) =>
+  config?.worktrunkAvailable ?? false;
 const selectSettings = (config: ServerConfig | null): ServerSettings =>
   config?.settings ?? DEFAULT_SERVER_SETTINGS;
 
@@ -108,7 +110,9 @@ export function applyServerConfigEvent(event: ServerConfigStreamEvent): void {
       return;
     }
     case "settingsUpdated": {
-      applySettingsUpdated(event.payload.settings);
+      applySettingsUpdated(event.payload.settings, {
+        worktrunkAvailable: event.payload.worktrunkAvailable,
+      });
       return;
     }
   }
@@ -130,7 +134,10 @@ export function applyProvidersUpdated(payload: ServerProviderUpdatedPayload): vo
   emitServerConfigUpdated(toServerConfigUpdatedPayload(nextConfig), "providerStatuses");
 }
 
-export function applySettingsUpdated(settings: ServerSettings): void {
+export function applySettingsUpdated(
+  settings: ServerSettings,
+  options?: { worktrunkAvailable?: boolean },
+): void {
   const latestServerConfig = getServerConfig();
   if (!latestServerConfig) {
     return;
@@ -139,6 +146,9 @@ export function applySettingsUpdated(settings: ServerSettings): void {
   const nextConfig = {
     ...latestServerConfig,
     settings,
+    ...(options?.worktrunkAvailable !== undefined
+      ? { worktrunkAvailable: options.worktrunkAvailable }
+      : {}),
   } satisfies ServerConfig;
   resolveServerConfig(nextConfig);
   emitServerConfigUpdated(toServerConfigUpdatedPayload(nextConfig), "settingsUpdated");
@@ -284,6 +294,10 @@ export function useServerKeybindingsConfigPath(): string | null {
 
 export function useServerObservability(): ServerConfig["observability"] | null {
   return useAtomValue(serverConfigAtom, selectObservability);
+}
+
+export function useServerWorktrunkAvailable(): boolean {
+  return useAtomValue(serverConfigAtom, selectWorktrunkAvailable);
 }
 
 export function useServerWelcomeSubscription(

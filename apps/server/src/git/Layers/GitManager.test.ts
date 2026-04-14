@@ -26,6 +26,7 @@ import { GitCore } from "../Services/GitCore.ts";
 import { makeGitManager } from "./GitManager.ts";
 import { ServerConfig } from "../../config.ts";
 import { ServerSettingsService } from "../../serverSettings.ts";
+import { Worktrunk } from "../../worktrunk/Services/Worktrunk.ts";
 import {
   ProjectSetupScriptRunner,
   type ProjectSetupScriptRunnerInput,
@@ -621,9 +622,19 @@ function makeManager(input?: {
 
   const serverSettingsLayer = ServerSettingsService.layerTest();
 
+  const WorktrunkTestLayer = Layer.succeed(Worktrunk, {
+    checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+    list: () => Effect.succeed([]),
+    switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+    switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+    switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+    remove: () => Effect.void,
+  } as any);
+
   const gitCoreLayer = GitCoreLive.pipe(
     Layer.provideMerge(NodeServices.layer),
     Layer.provideMerge(ServerConfigLayer),
+    Layer.provide(WorktrunkTestLayer),
   );
 
   const managerLayer = Layer.mergeAll(
@@ -635,6 +646,7 @@ function makeManager(input?: {
         runForThread: () => Effect.succeed({ status: "no-script" as const }),
       },
     ),
+    WorktrunkTestLayer,
     gitCoreLayer,
     serverSettingsLayer,
   ).pipe(Layer.provideMerge(NodeServices.layer));
@@ -647,9 +659,21 @@ function makeManager(input?: {
 
 const asThreadId = (threadId: string) => threadId as ThreadId;
 
-const GitManagerTestLayer = GitCoreLive.pipe(
-  Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "t3-git-manager-test-" })),
-  Layer.provideMerge(NodeServices.layer),
+const GitManagerTestWorktrunkLayer = Layer.succeed(Worktrunk, {
+  checkInstalled: () => Effect.succeed({ installed: true, version: "0.0.0-test" }),
+  list: () => Effect.succeed([]),
+  switchTo: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchCreate: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  switchPR: () => Effect.succeed({ path: "/mock/worktree", branch: "mock" }),
+  remove: () => Effect.void,
+} as any);
+const GitManagerTestLayer = Layer.mergeAll(
+  GitManagerTestWorktrunkLayer,
+  GitCoreLive.pipe(
+    Layer.provide(ServerConfig.layerTest(process.cwd(), { prefix: "t3-git-manager-test-" })),
+    Layer.provideMerge(NodeServices.layer),
+    Layer.provide(GitManagerTestWorktrunkLayer),
+  ),
 );
 
 it.layer(GitManagerTestLayer)("GitManager", (it) => {
