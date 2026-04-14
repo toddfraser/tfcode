@@ -179,9 +179,40 @@ interface StagePackageJson {
   readonly main: string;
   readonly build: Record<string, unknown>;
   readonly dependencies: Record<string, unknown>;
+  readonly overrides?: Record<string, unknown>;
   readonly devDependencies: {
     readonly electron: string;
   };
+}
+
+function resolveStageDependencyOverrides(
+  catalog: Record<string, unknown>,
+): Record<string, unknown> {
+  // Keep the staged desktop artifact on a single Effect release line. Without
+  // explicit overrides, `bun install --production` can float transitive
+  // `@effect/*` packages to newer beta builds than the direct `effect` pin,
+  // which breaks the packaged backend at runtime.
+  const overrides = Object.fromEntries(
+    Object.entries(catalog).filter(
+      ([name, version]) =>
+        typeof version === "string" &&
+        version.length > 0 &&
+        (name === "effect" || name.startsWith("@effect/")),
+    ),
+  );
+
+  const platformNodeVersion =
+    typeof catalog["@effect/platform-node"] === "string"
+      ? catalog["@effect/platform-node"]
+      : undefined;
+  const effectVersion = typeof catalog.effect === "string" ? catalog.effect : undefined;
+  const sharedVersion = platformNodeVersion ?? effectVersion;
+
+  if (sharedVersion) {
+    overrides["@effect/platform-node-shared"] = sharedVersion;
+  }
+
+  return overrides;
 }
 
 const AzureTrustedSigningOptionsConfig = Config.all({
@@ -595,6 +626,9 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
         cause,
       }),
   });
+  const stageDependencyOverrides = resolveStageDependencyOverrides(
+    rootPackageJson.workspaces.catalog,
+  );
 
   const appVersion = options.version ?? serverPackageJson.version;
   const commitHash = resolveGitCommitHash(repoRoot);
@@ -674,6 +708,7 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       ...resolvedServerDependencies,
       ...resolvedDesktopRuntimeDependencies,
     },
+    overrides: stageDependencyOverrides,
     devDependencies: {
       electron: electronVersion,
     },
