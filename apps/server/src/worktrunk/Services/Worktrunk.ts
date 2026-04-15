@@ -6,7 +6,7 @@
  *
  * @module Worktrunk
  */
-import { ServiceMap } from "effect";
+import { Context } from "effect";
 import type { Effect } from "effect";
 import type {
   WorktrunkListEntry,
@@ -90,6 +90,6 @@ export interface WorktrunkShape {
 /**
  * Worktrunk - Service tag for Worktrunk CLI operations.
  */
-export class Worktrunk extends ServiceMap.Service<Worktrunk, WorktrunkShape>()(
+export class Worktrunk extends Context.Service<Worktrunk, WorktrunkShape>()(
   "t3/worktrunk/Services/Worktrunk",
 ) {}

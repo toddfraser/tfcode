@@ -6,18 +6,18 @@ import {
   LoaderIcon,
   PlusIcon,
   RefreshCwIcon,
-  Undo2Icon,
   XIcon,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef, useState } from "react";
 import {
   PROVIDER_DISPLAY_NAMES,
+  type ScopedThreadRef,
   type ProviderKind,
   type ServerProvider,
   type ServerProviderModel,
-  ThreadId,
 } from "@t3tools/contracts";
+import { scopeThreadRef } from "@t3tools/client-runtime";
 import { DEFAULT_UNIFIED_SETTINGS } from "@t3tools/contracts/settings";
 import { normalizeModelSlug } from "@t3tools/shared/model";
 import { Equal } from "effect";
@@ -45,8 +45,13 @@ import {
   getCustomModelOptionsByProvider,
   resolveAppModelSelectionState,
 } from "../../modelSelection";
-import { ensureNativeApi, readNativeApi } from "../../nativeApi";
-import { useStore } from "../../store";
+import { ensureLocalApi, readLocalApi } from "../../localApi";
+import { useShallow } from "zustand/react/shallow";
+import {
+  selectProjectsAcrossEnvironments,
+  selectThreadShellsAcrossEnvironments,
+  useStore,
+} from "../../store";
 import { formatRelativeTime, formatRelativeTimeLabel } from "../../timestampFormat";
 import { cn } from "../../lib/utils";
 import { Button } from "../ui/button";
@@ -57,6 +62,13 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "../
 import { Switch } from "../ui/switch";
 import { toastManager } from "../ui/toast";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
+import {
+  SettingResetButton,
+  SettingsPageContainer,
+  SettingsRow,
+  SettingsSection,
+  useRelativeTimeTick,
+} from "./settingsLayout";
 import { ProjectFavicon } from "../ProjectFavicon";
 import {
   useServerAvailableEditors,
@@ -187,15 +199,6 @@ function getProviderVersionLabel(version: string | null | undefined) {
   return version.startsWith("v") ? version : `v${version}`;
 }
 
-function useRelativeTimeTick(intervalMs = 1_000) {
-  const [tick, setTick] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setTick(Date.now()), intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-  return tick;
-}
-
 function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }) {
   useRelativeTimeTick();
   const lastCheckedRelative = lastCheckedAt ? formatRelativeTime(lastCheckedAt) : null;
@@ -205,7 +208,7 @@ function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }
   }
 
   return (
-    <span className="text-xs text-muted-foreground/60">
+    <span className="text-[11px] text-muted-foreground/60">
       {lastCheckedRelative.suffix ? (
         <>
           Checked <span className="font-mono tabular-nums">{lastCheckedRelative.value}</span>{" "}
@@ -218,109 +221,11 @@ function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }
   );
 }
 
-function SettingsSection({
-  title,
-  icon,
-  headerAction,
-  children,
-}: {
-  title: string;
-  icon?: ReactNode;
-  headerAction?: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          {icon}
-          {title}
-        </h2>
-        {headerAction}
-      </div>
-      <div className="relative overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-xs/5 not-dark:bg-clip-padding before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-2xl)-1px)] before:shadow-[0_1px_--theme(--color-black/4%)] dark:before:shadow-[0_-1px_--theme(--color-white/6%)]">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function SettingsRow({
-  title,
-  description,
-  status,
-  resetAction,
-  control,
-  children,
-}: {
-  title: ReactNode;
-  description: string;
-  status?: ReactNode;
-  resetAction?: ReactNode;
-  control?: ReactNode;
-  children?: ReactNode;
-}) {
-  return (
-    <div className="border-t border-border px-4 py-4 first:border-t-0 sm:px-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex min-h-5 items-center gap-1.5">
-            <h3 className="text-sm font-medium text-foreground">{title}</h3>
-            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
-              {resetAction}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground">{description}</p>
-          {status ? <div className="pt-1 text-xs text-muted-foreground">{status}</div> : null}
-        </div>
-        {control ? (
-          <div className="flex w-full shrink-0 items-center gap-2 sm:w-auto sm:justify-end">
-            {control}
-          </div>
-        ) : null}
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function SettingResetButton({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger
-        render={
-          <Button
-            size="icon-xs"
-            variant="ghost"
-            aria-label={`Reset ${label} to default`}
-            className="size-5 rounded-sm p-0 text-muted-foreground hover:text-foreground"
-            onClick={(event) => {
-              event.stopPropagation();
-              onClick();
-            }}
-          >
-            <Undo2Icon className="size-3" />
-          </Button>
-        }
-      />
-      <TooltipPopup side="top">Reset to default</TooltipPopup>
-    </Tooltip>
-  );
-}
-
-function SettingsPageContainer({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">{children}</div>
-    </div>
-  );
-}
-
 function AboutVersionTitle() {
   return (
     <span className="inline-flex items-center gap-2">
       <span>Version</span>
-      <code className="text-xs font-medium text-muted-foreground">{APP_VERSION}</code>
+      <code className="text-[11px] font-medium text-muted-foreground">{APP_VERSION}</code>
     </span>
   );
 }
@@ -502,8 +407,8 @@ export function useSettingsRestore(onRestored?: () => void) {
 
   const restoreDefaults = useCallback(async () => {
     if (changedSettingLabels.length === 0) return;
-    const api = readNativeApi();
-    const confirmed = await (api ?? ensureNativeApi()).dialogs.confirm(
+    const api = readLocalApi();
+    const confirmed = await (api ?? ensureLocalApi()).dialogs.confirm(
       ["Restore default settings?", `This will reset: ${changedSettingLabels.join(", ")}.`].join(
         "\n",
       ),
@@ -566,7 +471,7 @@ export function GeneralSettingsPanel() {
     if (refreshingRef.current) return;
     refreshingRef.current = true;
     setIsRefreshingProviders(true);
-    void ensureNativeApi()
+    void ensureLocalApi()
       .server.refreshProviders()
       .catch((error: unknown) => {
         console.warn("Failed to refresh providers", error);
@@ -583,11 +488,6 @@ export function GeneralSettingsPanel() {
   const serverProviders = useServerProviders();
   const worktrunkAvailable = useServerWorktrunkAvailable();
   const codexHomePath = settings.providers.codex.homePath;
-  const canCreateWorktrees = settings.providers.worktrunk.enabled && worktrunkAvailable;
-  const isWorktrunkSettingsDirty = !Equal.equals(
-    settings.providers.worktrunk,
-    DEFAULT_UNIFIED_SETTINGS.providers.worktrunk,
-  );
   const logsDirectoryPath = observability?.logsDirectoryPath ?? null;
   const diagnosticsDescription = (() => {
     const exports: string[] = [];
@@ -600,16 +500,6 @@ export function GeneralSettingsPanel() {
     const mode = observability?.localTracingEnabled ? "Local trace file" : "Terminal logs only";
     return exports.length > 0 ? `${mode}. OTLP exporting ${exports.join(" and ")}.` : `${mode}.`;
   })();
-  const worktrunkHeadline = !settings.providers.worktrunk.enabled
-    ? "Disabled"
-    : worktrunkAvailable
-      ? "Available"
-      : "Not found";
-  const worktrunkDetail = !settings.providers.worktrunk.enabled
-    ? "Worktree creation is disabled in T3 Code."
-    : worktrunkAvailable
-      ? "Installed and ready for new worktree threads."
-      : "CLI not detected at the configured path.";
 
   const textGenerationModelSelection = resolveAppModelSelectionState(settings, serverProviders);
   const textGenProvider = textGenerationModelSelection.provider;
@@ -625,6 +515,21 @@ export function GeneralSettingsPanel() {
     settings.textGenerationModelSelection ?? null,
     DEFAULT_UNIFIED_SETTINGS.textGenerationModelSelection ?? null,
   );
+  const canCreateWorktrees = settings.providers.worktrunk.enabled && worktrunkAvailable;
+  const isWorktrunkSettingsDirty = !Equal.equals(
+    settings.providers.worktrunk,
+    DEFAULT_UNIFIED_SETTINGS.providers.worktrunk,
+  );
+  const worktrunkHeadline = !settings.providers.worktrunk.enabled
+    ? "Disabled"
+    : worktrunkAvailable
+      ? "Available"
+      : "Not found";
+  const worktrunkDetail = !settings.providers.worktrunk.enabled
+    ? "Worktree creation is disabled in T3 Code."
+    : worktrunkAvailable
+      ? "Installed and ready for new worktree threads."
+      : "CLI not detected at the configured path.";
 
   const openInPreferredEditor = useCallback(
     (target: "keybindings" | "logsDirectory", path: string | null, failureMessage: string) => {
@@ -642,7 +547,7 @@ export function GeneralSettingsPanel() {
         return;
       }
 
-      void ensureNativeApi()
+      void ensureLocalApi()
         .shell.openInEditor(path, editor)
         .catch((error) => {
           setOpenPathErrorByTarget((existing) => ({
@@ -804,6 +709,7 @@ export function GeneralSettingsPanel() {
           serverProviders[0]!.checkedAt,
         )
       : null;
+
   return (
     <SettingsPageContainer>
       <SettingsSection title="General">
@@ -1361,7 +1267,7 @@ export function GeneralSettingsPanel() {
                                   </TooltipTrigger>
                                   <TooltipPopup side="top" className="max-w-56">
                                     <div className="space-y-1">
-                                      <code className="block text-xs text-foreground">
+                                      <code className="block text-[11px] text-foreground">
                                         {model.slug}
                                       </code>
                                       {capLabels.length > 0 ? (
@@ -1369,7 +1275,7 @@ export function GeneralSettingsPanel() {
                                           {capLabels.map((label) => (
                                             <span
                                               key={label}
-                                              className="text-xs text-muted-foreground"
+                                              className="text-[10px] text-muted-foreground"
                                             >
                                               {label}
                                             </span>
@@ -1382,7 +1288,7 @@ export function GeneralSettingsPanel() {
                               ) : null}
                               {model.isCustom ? (
                                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                                  <span className="text-xs text-muted-foreground">custom</span>
+                                  <span className="text-[10px] text-muted-foreground">custom</span>
                                   <button
                                     type="button"
                                     className="text-muted-foreground transition-colors hover:text-foreground"
@@ -1574,7 +1480,7 @@ export function GeneralSettingsPanel() {
           description="Open the persisted `keybindings.json` file to edit advanced bindings directly."
           status={
             <>
-              <span className="block break-all font-mono text-xs text-foreground">
+              <span className="block break-all font-mono text-[11px] text-foreground">
                 {keybindingsConfigPath ?? "Resolving keybindings path..."}
               </span>
               {openKeybindingsError ? (
@@ -1611,7 +1517,7 @@ export function GeneralSettingsPanel() {
           description={diagnosticsDescription}
           status={
             <>
-              <span className="block break-all font-mono text-xs text-foreground">
+              <span className="block break-all font-mono text-[11px] text-foreground">
                 {logsDirectoryPath ?? "Resolving logs directory..."}
               </span>
               {openDiagnosticsError ? (
@@ -1636,12 +1542,11 @@ export function GeneralSettingsPanel() {
 }
 
 export function ArchivedThreadsPanel() {
-  const projects = useStore((store) => store.projects);
-  const threads = useStore((store) => store.threads);
+  const projects = useStore(useShallow(selectProjectsAcrossEnvironments));
+  const threads = useStore(useShallow(selectThreadShellsAcrossEnvironments));
   const { unarchiveThread, confirmAndDeleteThread } = useThreadActions();
   const archivedGroups = useMemo(() => {
-    const projectById = new Map(projects.map((project) => [project.id, project] as const));
-    return [...projectById.values()]
+    return projects
       .map((project) => ({
         project,
         threads: threads
@@ -1656,8 +1561,8 @@ export function ArchivedThreadsPanel() {
   }, [projects, threads]);
 
   const handleArchivedThreadContextMenu = useCallback(
-    async (threadId: ThreadId, position: { x: number; y: number }) => {
-      const api = readNativeApi();
+    async (threadRef: ScopedThreadRef, position: { x: number; y: number }) => {
+      const api = readLocalApi();
       if (!api) return;
       const clicked = await api.contextMenu.show(
         [
@@ -1669,7 +1574,7 @@ export function ArchivedThreadsPanel() {
 
       if (clicked === "unarchive") {
         try {
-          await unarchiveThread(threadId);
+          await unarchiveThread(threadRef);
         } catch (error) {
           toastManager.add({
             type: "error",
@@ -1681,7 +1586,7 @@ export function ArchivedThreadsPanel() {
       }
 
       if (clicked === "delete") {
-        await confirmAndDeleteThread(threadId);
+        await confirmAndDeleteThread(threadRef);
       }
     },
     [confirmAndDeleteThread, unarchiveThread],
@@ -1706,7 +1611,7 @@ export function ArchivedThreadsPanel() {
           <SettingsSection
             key={project.id}
             title={project.name}
-            icon={<ProjectFavicon cwd={project.cwd} />}
+            icon={<ProjectFavicon environmentId={project.environmentId} cwd={project.cwd} />}
           >
             {projectThreads.map((thread) => (
               <div
@@ -1714,10 +1619,13 @@ export function ArchivedThreadsPanel() {
                 className="flex items-center justify-between gap-3 border-t border-border px-4 py-3 first:border-t-0 sm:px-5"
                 onContextMenu={(event) => {
                   event.preventDefault();
-                  void handleArchivedThreadContextMenu(thread.id, {
-                    x: event.clientX,
-                    y: event.clientY,
-                  });
+                  void handleArchivedThreadContextMenu(
+                    scopeThreadRef(thread.environmentId, thread.id),
+                    {
+                      x: event.clientX,
+                      y: event.clientY,
+                    },
+                  );
                 }}
               >
                 <div className="min-w-0 flex-1">
@@ -1734,13 +1642,16 @@ export function ArchivedThreadsPanel() {
                   size="sm"
                   className="h-7 shrink-0 cursor-pointer gap-1.5 px-2.5"
                   onClick={() =>
-                    void unarchiveThread(thread.id).catch((error) => {
-                      toastManager.add({
-                        type: "error",
-                        title: "Failed to unarchive thread",
-                        description: error instanceof Error ? error.message : "An error occurred.",
-                      });
-                    })
+                    void unarchiveThread(scopeThreadRef(thread.environmentId, thread.id)).catch(
+                      (error) => {
+                        toastManager.add({
+                          type: "error",
+                          title: "Failed to unarchive thread",
+                          description:
+                            error instanceof Error ? error.message : "An error occurred.",
+                        });
+                      },
+                    )
                   }
                 >
                   <ArchiveX className="size-3.5" />

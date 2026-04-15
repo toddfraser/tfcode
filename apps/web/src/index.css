@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:is(.dark, .dark *));
+/* Window Controls Overlay: active when Electron exposes native titlebar control geometry. */
+@custom-variant wco (&:is(.wco, .wco *));
 
 @theme inline {
   --animate-skeleton: skeleton 2s -1s infinite linear;
@@ -42,13 +44,11 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
 
-  /* Unified font families: SF Pro (sans) / SF Mono (mono) */
   --font-sans: "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-mono: "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   --font-heading:
     "SF Pro", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-  /* Neutralize all font-weight emphasis until we decide what needs it */
   --font-weight-thin: 400;
   --font-weight-extralight: 400;
   --font-weight-light: 400;
@@ -59,7 +59,6 @@
   --font-weight-extrabold: 400;
   --font-weight-black: 400;
 
-  /* Unified font sizes */
   --text-xs: 12px;
   --text-xs--line-height: 16px;
   --text-sm: 14px;
@@ -74,7 +73,6 @@
   --text-2xl--line-height: 20px;
   --text-3xl: 14px;
   --text-3xl--line-height: 20px;
-
   @keyframes skeleton {
     to {
       background-position: -200% 0;
@@ -86,8 +84,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    background-color: var(--app-chrome-background);
+  }
   body {
     @apply bg-background text-foreground relative;
+    background-color: var(--app-chrome-background);
   }
 }
 
@@ -104,6 +106,7 @@
   color-scheme: light;
   --radius: 0.625rem;
   --background: var(--color-white);
+  --app-chrome-background: var(--background);
   --foreground: var(--color-neutral-800);
   --card: var(--color-white);
   --card-foreground: var(--color-neutral-800);
@@ -137,6 +140,7 @@
   @variant dark {
     color-scheme: dark;
     --background: color-mix(in srgb, var(--color-neutral-950) 95%, var(--color-white));
+    --app-chrome-background: var(--background);
     --foreground: var(--color-neutral-100);
     --card: color-mix(in srgb, var(--background) 98%, var(--color-white));
     --card-foreground: var(--color-neutral-100);
@@ -365,7 +369,7 @@ label:has(> select#reasoning-effort) select {
   background: var(--muted);
   padding: 0.1rem 0.35rem;
   color: var(--foreground);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .chat-markdown pre {
@@ -381,17 +385,18 @@ label:has(> select#reasoning-effort) select {
   border: none;
   background: transparent;
   padding: 0;
-  line-height: 1.5;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .chat-markdown .chat-markdown-codeblock {
+  --chat-markdown-codeblock-copy-button-space: 1.5rem;
   position: relative;
   margin: 0.65rem 0;
 }
 
 .chat-markdown .chat-markdown-codeblock pre {
   margin: 0;
+  padding-right: calc(0.9rem + var(--chat-markdown-codeblock-copy-button-space));
 }
 
 .chat-markdown .chat-markdown-copy-button {
@@ -408,6 +413,7 @@ label:has(> select#reasoning-effort) select {
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--background) 82%, transparent);
   color: var(--muted-foreground);
+  cursor: pointer;
   opacity: 0;
   pointer-events: none;
   transition:

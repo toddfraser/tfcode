@@ -179,9 +179,40 @@ interface StagePackageJson {
   readonly main: string;
   readonly build: Record<string, unknown>;
   readonly dependencies: Record<string, unknown>;
+  readonly overrides: Record<string, unknown>;
   readonly devDependencies: {
     readonly electron: string;
   };
+}
+
+function resolveStageDependencyOverrides(
+  catalog: Record<string, unknown>,
+): Record<string, unknown> {
+  // Keep the staged desktop artifact on a single Effect release line. Without
+  // explicit overrides, `bun install --production` can float transitive
+  // `@effect/*` packages to newer beta builds than the direct `effect` pin,
+  // which breaks the packaged backend at runtime.
+  const overrides = Object.fromEntries(
+    Object.entries(catalog).filter(
+      ([name, version]) =>
+        typeof version === "string" &&
+        version.length > 0 &&
+        (name === "effect" || name.startsWith("@effect/")),
+    ),
+  );
+
+  const platformNodeVersion =
+    typeof catalog["@effect/platform-node"] === "string"
+      ? catalog["@effect/platform-node"]
+      : undefined;
+  const effectVersion = typeof catalog.effect === "string" ? catalog.effect : undefined;
+  const sharedVersion = platformNodeVersion ?? effectVersion;
+
+  if (sharedVersion) {
+    overrides["@effect/platform-node-shared"] = sharedVersion;
+  }
+
+  return overrides;
 }
 
 const AzureTrustedSigningOptionsConfig = Config.all({
@@ -213,11 +244,13 @@ const BuildEnvConfig = Config.all({
 });
 
 const resolveBooleanFlag = (flag: Option.Option<boolean>, envValue: boolean) =>
-  Option.getOrElse(Option.filter(flag, Boolean), () => envValue);
+  Option.getOrElse(flag, () => envValue);
 const mergeOptions = <A>(a: Option.Option<A>, b: Option.Option<A>, defaultValue: A) =>
   Option.getOrElse(a, () => Option.getOrElse(b, () => defaultValue));
 
-const resolveBuildOptions = Effect.fn("resolveBuildOptions")(function* (input: BuildCliInput) {
+export const resolveBuildOptions = Effect.fn("resolveBuildOptions")(function* (
+  input: BuildCliInput,
+) {
   const path = yield* Path.Path;
   const repoRoot = yield* RepoRoot;
   const env = yield* BuildEnvConfig.asEffect();
@@ -424,9 +457,9 @@ function validateBundledClientAssets(clientDir: string) {
 }
 
 function resolveDesktopRuntimeDependencies(
-  dependencies: Record<string, unknown> | undefined,
-  catalog: Record<string, unknown>,
-): Record<string, unknown> {
+  dependencies: Record<string, string> | undefined,
+  catalog: Record<string, string>,
+): Record<string, string> {
   if (!dependencies || Object.keys(dependencies).length === 0) {
     return {};
   }
@@ -570,6 +603,20 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
     });
   }
 
+  const resolvedOverrides = yield* Effect.try({
+    try: () =>
+      resolveCatalogDependencies(
+        rootPackageJson.overrides,
+        rootPackageJson.workspaces.catalog,
+        "apps/desktop",
+      ),
+    catch: (cause) =>
+      new BuildScriptError({
+        message: "Could not resolve overrides from package.json.",
+        cause,
+      }),
+  });
+
   const resolvedServerDependencies = yield* Effect.try({
     try: () =>
       resolveCatalogDependencies(
@@ -595,6 +642,13 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
         cause,
       }),
   });
+  const stageDependencyOverrides = resolveStageDependencyOverrides(
+    rootPackageJson.workspaces.catalog,
+  );
+  const stageOverrides = {
+    ...resolvedOverrides,
+    ...stageDependencyOverrides,
+  };
 
   const appVersion = options.version ?? serverPackageJson.version;
   const commitHash = resolveGitCommitHash(repoRoot);
@@ -674,6 +728,7 @@ const buildDesktopArtifact = Effect.fn("buildDesktopArtifact")(function* (
       ...resolvedServerDependencies,
       ...resolvedDesktopRuntimeDependencies,
     },
+    overrides: stageOverrides,
     devDependencies: {
       electron: electronVersion,
     },
@@ -822,8 +877,10 @@ const buildDesktopArtifactCli = Command.make("build-desktop-artifact", {
 
 const cliRuntimeLayer = Layer.mergeAll(Logger.layer([Logger.consolePretty()]), NodeServices.layer);
 
-Command.run(buildDesktopArtifactCli, { version: "0.0.0" }).pipe(
-  Effect.scoped,
-  Effect.provide(cliRuntimeLayer),
-  NodeRuntime.runMain,
-);
+if (import.meta.main) {
+  Command.run(buildDesktopArtifactCli, { version: "0.0.0" }).pipe(
+    Effect.scoped,
+    Effect.provide(cliRuntimeLayer),
+    NodeRuntime.runMain,
+  );
+}
