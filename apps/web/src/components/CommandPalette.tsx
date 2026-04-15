@@ -54,8 +54,9 @@ import {
 } from "./CommandPalette.logic";
 import { CommandPaletteResults } from "./CommandPaletteResults";
 import { ProjectFavicon } from "./ProjectFavicon";
-import { useServerKeybindings } from "../rpc/serverState";
+import { useServerKeybindings, useServerWorktrunkAvailable } from "../rpc/serverState";
 import { resolveShortcutCommand } from "../keybindings";
+import { resolveSidebarNewThreadEnvMode } from "./Sidebar.logic";
 import {
   Command,
   CommandDialog,
@@ -141,6 +142,7 @@ function OpenCommandPaletteDialog() {
   const deferredQuery = useDeferredValue(query);
   const isActionsOnly = deferredQuery.startsWith(">");
   const settings = useSettings();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const { activeDraftThread, activeThread, defaultProjectRef, handleNewThread } =
     useHandleNewThread();
   const projects = useStore(useShallow(selectProjectsAcrossEnvironments));
@@ -149,6 +151,10 @@ function OpenCommandPaletteDialog() {
   const [viewStack, setViewStack] = useState<CommandPaletteView[]>([]);
   const currentView = viewStack.at(-1) ?? null;
   const paletteMode = getCommandPaletteMode({ currentView });
+  const resolvedDefaultThreadEnvMode = resolveSidebarNewThreadEnvMode({
+    defaultEnvMode: settings.defaultThreadEnvMode,
+    worktrunkAvailable,
+  });
 
   const projectTitleById = useMemo(
     () => new Map<ProjectId, string>(projects.map((project) => [project.id, project.name])),
@@ -176,13 +182,13 @@ function OpenCommandPaletteDialog() {
       }
 
       await handleNewThread(scopeProjectRef(project.environmentId, project.id), {
-        envMode: settings.defaultThreadEnvMode,
+        envMode: resolvedDefaultThreadEnvMode,
       });
     },
     [
       handleNewThread,
       navigate,
-      settings.defaultThreadEnvMode,
+      resolvedDefaultThreadEnvMode,
       settings.sidebarThreadSortOrder,
       threads,
     ],
@@ -223,7 +229,7 @@ function OpenCommandPaletteDialog() {
               activeDraftThread,
               activeThread,
               defaultProjectRef,
-              defaultThreadEnvMode: settings.defaultThreadEnvMode,
+              defaultThreadEnvMode: resolvedDefaultThreadEnvMode,
               handleNewThread,
             },
             scopeProjectRef(project.environmentId, project.id),
@@ -236,7 +242,7 @@ function OpenCommandPaletteDialog() {
       defaultProjectRef,
       handleNewThread,
       projects,
-      settings.defaultThreadEnvMode,
+      resolvedDefaultThreadEnvMode,
     ],
   );
 
@@ -307,7 +313,7 @@ function OpenCommandPaletteDialog() {
             activeDraftThread,
             activeThread,
             defaultProjectRef,
-            defaultThreadEnvMode: settings.defaultThreadEnvMode,
+            defaultThreadEnvMode: resolvedDefaultThreadEnvMode,
             handleNewThread,
           });
         },

@@ -143,7 +143,7 @@ import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
 import { CommandDialogTrigger } from "./ui/command";
 import { readEnvironmentApi } from "../environmentApi";
 import { useSettings, useUpdateSettings } from "~/hooks/useSettings";
-import { useServerKeybindings } from "../rpc/serverState";
+import { useServerKeybindings, useServerWorktrunkAvailable } from "../rpc/serverState";
 import { deriveLogicalProjectKey } from "../logicalProject";
 import {
   useSavedEnvironmentRegistryStore,
@@ -240,38 +240,22 @@ type ThreadPr = GitStatusResult["pr"];
 
 function ThreadStatusLabel({
   status,
-  compact = false,
+  compact: _compact = false,
 }: {
   status: ThreadStatusPill;
   compact?: boolean;
 }) {
-  if (compact) {
-    return (
-      <span
-        title={status.label}
-        className={`inline-flex size-3.5 shrink-0 items-center justify-center ${status.colorClass}`}
-      >
-        <span
-          className={`size-[9px] rounded-full ${status.dotClass} ${
-            status.pulse ? "animate-pulse" : ""
-          }`}
-        />
-        <span className="sr-only">{status.label}</span>
-      </span>
-    );
-  }
-
   return (
     <span
       title={status.label}
-      className={`inline-flex items-center gap-1 text-[10px] ${status.colorClass}`}
+      className={`inline-flex size-3.5 shrink-0 items-center justify-center ${status.colorClass}`}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${
+        className={`size-[9px] rounded-full ${status.dotClass} ${
           status.pulse ? "animate-pulse" : ""
         }`}
       />
-      <span className="hidden md:inline">{status.label}</span>
+      <span className="sr-only">{status.label}</span>
     </span>
   );
 }
@@ -1000,6 +984,7 @@ const SidebarProjectItem = memo(function SidebarProjectItem(props: SidebarProjec
   const defaultThreadEnvMode = useSettings<ThreadEnvMode>(
     (settings) => settings.defaultThreadEnvMode,
   );
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const router = useRouter();
   const markThreadUnread = useUiStateStore((state) => state.markThreadUnread);
   const toggleProject = useUiStateStore((state) => state.toggleProject);
@@ -1529,6 +1514,7 @@ const SidebarProjectItem = memo(function SidebarProjectItem(props: SidebarProjec
         projectId: project.id,
         defaultEnvMode: resolveSidebarNewThreadEnvMode({
           defaultEnvMode: defaultThreadEnvMode,
+          worktrunkAvailable,
         }),
         activeThread:
           currentActiveThread && currentActiveThread.projectId === project.id
@@ -1556,7 +1542,14 @@ const SidebarProjectItem = memo(function SidebarProjectItem(props: SidebarProjec
         envMode: seedContext.envMode,
       });
     },
-    [defaultThreadEnvMode, handleNewThread, project.environmentId, project.id, router],
+    [
+      defaultThreadEnvMode,
+      handleNewThread,
+      project.environmentId,
+      project.id,
+      router,
+      worktrunkAvailable,
+    ],
   );
 
   const attemptArchiveThread = useCallback(
@@ -2392,6 +2385,7 @@ export default function Sidebar() {
   });
   const routeThreadKey = routeThreadRef ? scopedThreadKey(routeThreadRef) : null;
   const keybindings = useServerKeybindings();
+  const worktrunkAvailable = useServerWorktrunkAvailable();
   const [addingProject, setAddingProject] = useState(false);
   const [newCwd, setNewCwd] = useState("");
   const [isPickingFolder, setIsPickingFolder] = useState(false);
@@ -2575,6 +2569,10 @@ export default function Sidebar() {
   const newThreadShortcutLabel =
     shortcutLabelForCommand(keybindings, "chat.newLocal", newThreadShortcutLabelOptions) ??
     shortcutLabelForCommand(keybindings, "chat.new", newThreadShortcutLabelOptions);
+  const resolvedDefaultThreadEnvMode = resolveSidebarNewThreadEnvMode({
+    defaultEnvMode: defaultThreadEnvMode,
+    worktrunkAvailable,
+  });
   const focusMostRecentThreadForProject = useCallback(
     (projectRef: { environmentId: EnvironmentId; projectId: ProjectId }) => {
       const physicalKey = scopedProjectKey(
@@ -2637,7 +2635,7 @@ export default function Sidebar() {
         });
         if (activeEnvironmentId !== null) {
           await handleNewThread(scopeProjectRef(activeEnvironmentId, projectId), {
-            envMode: defaultThreadEnvMode,
+            envMode: resolvedDefaultThreadEnvMode,
           }).catch(() => undefined);
         }
       } catch (error) {
@@ -2664,7 +2662,7 @@ export default function Sidebar() {
       isAddingProject,
       projects,
       shouldBrowseForProjectImmediately,
-      defaultThreadEnvMode,
+      resolvedDefaultThreadEnvMode,
     ],
   );
 

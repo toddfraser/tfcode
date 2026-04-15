@@ -184,7 +184,7 @@ describe("resolveSidebarNewThreadEnvMode", () => {
 });
 
 describe("resolveSidebarNewThreadSeedContext", () => {
-  it("prefers the default worktree mode over active thread context", () => {
+  it("preserves the active draft worktree context even when the default mode is worktree", () => {
     expect(
       resolveSidebarNewThreadSeedContext({
         projectId: "project-1",
@@ -202,6 +202,8 @@ describe("resolveSidebarNewThreadSeedContext", () => {
         },
       }),
     ).toEqual({
+      branch: "feature/draft",
+      worktreePath: "/repo/.t3/worktrees/draft",
       envMode: "worktree",
     });
   });

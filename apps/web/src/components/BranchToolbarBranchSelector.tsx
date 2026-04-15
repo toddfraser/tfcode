@@ -22,6 +22,7 @@ import { newCommandId } from "../lib/utils";
 import { parsePullRequestReference } from "../pullRequestReference";
 import { useStore } from "../store";
 import { createProjectSelectorByRef, createThreadSelectorByRef } from "../storeSelectors";
+import { formatWorktreePathForDisplay } from "../worktreeCleanup";
 import {
   deriveLocalBranchNameFromRemoteRef,
   resolveBranchSelectionTarget,
@@ -70,7 +71,7 @@ function getBranchTriggerLabel(input: {
     return "Select branch";
   }
   if (effectiveEnvMode === "worktree" && !activeWorktreePath) {
-    return `From ${resolvedActiveBranch}`;
+    return `New worktree from ${resolvedActiveBranch}`;
   }
   return resolvedActiveBranch;
 }
@@ -527,10 +528,14 @@ export function BranchToolbarBranchSelector({
 
     const hasSecondaryWorktree =
       branch.worktreePath && activeProjectCwd && branch.worktreePath !== activeProjectCwd;
+    const worktreeLabel =
+      hasSecondaryWorktree && branch.worktreePath
+        ? formatWorktreePathForDisplay(branch.worktreePath)
+        : null;
     const badge = branch.current
       ? "current"
       : hasSecondaryWorktree
-        ? "worktree"
+        ? "existing worktree"
         : branch.isRemote
           ? "remote"
           : branch.isDefault
@@ -545,8 +550,15 @@ export function BranchToolbarBranchSelector({
         onClick={() => selectBranch(branch)}
       >
         <div className="flex w-full items-center justify-between gap-2">
-          <span className="truncate">{itemValue}</span>
-          {badge && <span className="shrink-0 text-xs text-muted-foreground/45">{badge}</span>}
+          <div className="min-w-0">
+            <div className="truncate">{itemValue}</div>
+            {worktreeLabel ? (
+              <div className="truncate text-muted-foreground/60 text-xs">{worktreeLabel}</div>
+            ) : null}
+          </div>
+          {badge ? (
+            <span className="shrink-0 text-xs text-muted-foreground/45">{badge}</span>
+          ) : null}
         </div>
       </ComboboxItem>
     );

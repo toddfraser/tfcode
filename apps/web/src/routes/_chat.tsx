@@ -74,6 +74,7 @@ function ChatRouteGlobalShortcuts() {
           defaultProjectRef,
           defaultThreadEnvMode: resolveSidebarNewThreadEnvMode({
             defaultEnvMode: appSettings.defaultThreadEnvMode,
+            worktrunkAvailable,
           }),
           handleNewThread,
         });

@@ -3582,7 +3582,7 @@ describe("ChatView timeline estimator parity (full app)", () => {
     }
   });
 
-  it("creates a fresh worktree draft from an existing worktree thread when the default mode is worktree", async () => {
+  it("preserves the current worktree when creating a new thread from an existing worktree thread", async () => {
     const mounted = await mountChatView({
       viewport: DEFAULT_VIEWPORT,
       snapshot: {
@@ -3628,7 +3628,8 @@ describe("ChatView timeline estimator parity (full app)", () => {
 
       expect(useComposerDraftStore.getState().getDraftSession(newDraftId)).toMatchObject({
         envMode: "worktree",
-        worktreePath: null,
+        branch: "feature/existing",
+        worktreePath: "/repo/.t3/worktrees/existing",
       });
     } finally {
       await mounted.cleanup();
